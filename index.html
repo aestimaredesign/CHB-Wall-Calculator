@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHB Wall Estimation Calculator</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #34495e;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #c0392b;
+            --gray: #95a5a6;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 1000px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        header {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        h2 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light);
+        }
+        
+        h3 {
+            color: var(--dark);
+            margin: 15px 0 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+        }
+        
+        .checkbox-group input {
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .btn-success {
+            background: var(--success);
+        }
+        
+        .btn-success:hover {
+            background: #219955;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background: #a33226;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: var(--light);
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: rgba(236, 240, 241, 0.5);
+        }
+        
+        .cost-summary {
+            background: var(--light);
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .cost-total {
+            font-weight: 600;
+            font-size: 1.2em;
+            border-top: 2px solid var(--dark);
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        
+        .visualization {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            height: 500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        
+        canvas {
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom-color: var(--secondary);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .alert {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .alert-warning {
+            background: rgba(243, 156, 18, 0.2);
+            border-left: 4px solid var(--warning);
+        }
+        
+        .alert-danger {
+            background: rgba(192, 57, 43, 0.2);
+            border-left: 4px solid var(--danger);
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted var(--gray);
+            cursor: help;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .input-group input {
+            flex: 1;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .subsection {
+            padding-left: 15px;
+            border-left: 3px solid var(--light);
+            margin: 15px 0;
+        }
+        
+        .material-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .badge-primary {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .badge-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .badge-warning {
+            background: var(--warning);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CHB Wall Estimation Calculator</h1>
+            <p>Professional tool for calculating materials, labor, and costs for CHB masonry walls</p>
+        </header>
+        
+        <div class="left-column">
+            <div class="card">
+                <div class="tabs">
+                    <div class="tab active" data-tab="dimensions">Dimensions</div>
+                    <div class="tab" data-tab="materials">Materials</div>
+                    <div class="tab" data-tab="labor">Labor & Costs</div>
+                </div>
+                
+                <form id="calculatorForm">
+                    <div class="tab-content active" id="dimensions-tab">
+                        <div class="form-group">
+                            <label for="wallLength">Wall Length (m)</label>
+                            <input type="number" id="wallLength" step="0.01" min="0.1" value="10" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="wallHeight">Wall Height (m)</label>
+                            <input type="number" id="wallHeight" step="0.01" min="0.1" value="3" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="chbSize">CHB Size</label>
+                            <select id="chbSize">
+                                <option value="0.1">4" (100mm) thick</option>
+                                <option value="0.15" selected>6" (150mm) thick</option>
+                                <option value="0.2">8" (200mm) thick</option>
+                            </select>
+                        </div>
+                        
+                        <h3>Openings</h3>
+                        
+                        <div class="form-group">
+                            <label for="doorCount">Number of Doors</label>
+                            <input type="number" id="doorCount" min="0" value="1">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="doorWidth">Average Door Width (m)</label>
+                            <input type="number" id="doorWidth" step="0.01" min="0.5" value="0.9">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="doorHeight">Average Door Height (m)</label>
+                            <input type="number" id="doorHeight" step="0.01" min="1.5" value="2.1">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="windowCount">Number of Windows</label>
+                            <input type="number" id="windowCount" min="0" value="2">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="windowWidth">Average Window Width (m)</label>
+                            <input type="number" id="windowWidth" step="0.01" min="0.3" value="1.2">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="windowHeight">Average Window Height (m)</label>
+                            <input type="number" id="windowHeight" step="0.01" min="0.3" value="1.2">
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="materials-tab">
+                        <div class="form-group">
+                            <label for="standard">Design Standard <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Select the building code standard for reinforcement and plaster specifications</span>
+                            </span></label>
+                            <select id="standard">
+                                <option value="nscp">NSCP (Philippines)</option>
+                                <option value="aci">ACI (American)</option>
+                                <option value="astm">ASTM</option>
+                                <option value="eurocode">Eurocode</option>
+                            </select>
+                        </div>
+                        
+                        <h3>Reinforcement</h3>
+                        
+                        <div class="form-group">
+                            <label for="verticalBars">Vertical Bar Spacing (mm) <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Distance between vertical reinforcing bars</span>
+                            </span></label>
+                            <input type="number" id="verticalBars" value="800" min="400" step="100">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="horizontalBars">Horizontal Bar Layers <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Number of CHB courses between horizontal bars (typically every 3rd course)</span>
+                            </span></label>
+                            <input type="number" id="horizontalBars" value="3" min="1" step="1">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="rebarDiameter">Rebar Diameter (mm)</label>
+                            <select id="rebarDiameter">
+                                <option value="10">10mm</option>
+                                <option value="12" selected>12mm</option>
+                                <option value="16">16mm</option>
+                            </select>
+                        </div>
+                        
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="includeLaps" checked>
+                            <label for="includeLaps">Include lap splices and hooks</label>
+                        </div>
+                        
+                        <h3>Mortar & Plaster</h3>
+                        
+                        <div class="form-group">
+                            <label for="mortarRatio">Mortar Mix Ratio <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Cement to sand ratio for mortar</span>
+                            </span></label>
+                            <select id="mortarRatio">
+                                <option value="1:3">1:3 (Rich mix)</option>
+                                <option value="1:4" selected>1:4 (Standard)</option>
+                                <option value="1:5">1:5 (Economy)</option>
+                                <option value="1:6">1:6 (Lean mix)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="plastering" checked>
+                            <label for="plastering">Include plastering</label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="plasterRatio">Plaster Mix Ratio <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Cement to sand ratio for plaster</span>
+                            </span></label>
+                            <select id="plasterRatio">
+                                <option value="1:2">1:2 (Rich mix)</option>
+                                <option value="1:3" selected>1:3 (Standard)</option>
+                                <option value="1:4">1:4 (Economy)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="plasterThickness">Plaster Thickness (mm) <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Thickness of plaster on each side</span>
+                            </span></label>
+                            <input type="number" id="plasterThickness" value="20" min="10" max="30" step="5">
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="labor-tab">
+                        <div class="form-group">
+                            <label for="productivityRate">Productivity Rate (m²/day) <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Area of CHB wall a mason can complete in one day</span>
+                            </span></label>
+                            <select id="productivityRate">
+                                <option value="6">6 m²/day (High quality)</option>
+                                <option value="8" selected>8 m²/day (Standard quality)</option>
+                                <option value="10">10 m²/day (Economy)</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" id="customRateContainer" style="display: none;">
+                            <label for="customRate">Custom Rate (m²/day)</label>
+                            <input type="number" id="customRate" min="4" max="15" step="0.5" value="8">
+                        </div>
+                        
+                        <h3>Crew Composition</h3>
+                        
+                        <div class="form-group">
+                            <label for="masons">Masons</label>
+                            <input type="number" id="masons" min="1" value="2">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="helpers">Helpers</label>
+                            <input type="number" id="helpers" min="0" value="2">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="carpenters">Carpenters (for forms)</label>
+                            <input type="number" id="carpenters" min="0" value="1">
+                        </div>
+                        
+                        <h3>Costs</h3>
+                        
+                        <div class="form-group">
+                            <label for="chbCost">CHB Cost per Piece</label>
+                            <input type="number" id="chbCost" step="0.01" min="0" value="25">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="cementCost">Cement Cost per Bag (40kg)</label>
+                            <input type="number" id="cementCost" step="0.01" min="0" value="250">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="sandCost">Sand Cost per m³</label>
+                            <input type="number" id="sandCost" step="0.01" min="0" value="800">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="rebarCost">Rebar Cost per kg</label>
+                            <input type="number" id="rebarCost" step="0.01" min="0" value="45">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="masonDailyRate">Mason Daily Rate</label>
+                            <input type="number" id="masonDailyRate" step="0.01" min="0" value="600">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="helperDailyRate">Helper Daily Rate</label>
+                            <input type="number" id="helperDailyRate" step="0.01" min="0" value="400">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="carpenterDailyRate">Carpenter Daily Rate</label>
+                            <input type="number" id="carpenterDailyRate" step="0.01" min="0" value="500">
+                        </div>
+                        
+                        <h3>Additional Factors</h3>
+                        
+                        <div class="form-group">
+                            <label for="wasteFactor">Waste Factor (%)</label>
+                            <input type="number" id="wasteFactor" min="0" max="20" value="5">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="overhead">Overhead (%)</label>
+                            <input type="number" id="overhead" min="0" max="30" value="15">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="profitMargin">Profit Margin (%)</label>
+                            <input type="number" id="profitMargin" min="0" max="30" value="10">
+                        </div>
+                    </div>
+                    
+                    <button type="button" id="calculateBtn" class="btn btn-block">Calculate Estimate</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2>Calculation Results</h2>
+                <div id="results">
+                    <p class="alert alert-warning">Enter wall dimensions and click Calculate to see results</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="right-column">
+            <div class="card">
+                <h2>Wall Visualization</h2>
+                <div class="visualization">
+                    <canvas id="wallCanvas" width="600" height="400"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Bill of Quantities</h2>
+                <div id="boq">
+                    <p class="alert alert-warning">Calculation required to generate BOQ</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Cost Breakdown</h2>
+                <div id="costBreakdown">
+                    <p class="alert alert-warning">Calculation required to show cost breakdown</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab functionality
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    // Hide all tab contents
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    // Add active class to clicked tab
+                    tab.classList.add('active');
+                    
+                    // Show the corresponding tab content
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(tabId + '-tab').classList.add('active');
+                });
+            });
+            
+            // Custom productivity rate toggle
+            const productivityRate = document.getElementById('productivityRate');
+            const customRateContainer = document.getElementById('customRateContainer');
+            
+            productivityRate.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    customRateContainer.style.display = 'block';
+                } else {
+                    customRateContainer.style.display = 'none';
+                }
+            });
+            
+            // Calculate button event
+            document.getElementById('calculateBtn').addEventListener('click', calculateEstimate);
+            
+            // Initial visualization
+            drawWallVisualization();
+        });
+        
+        function calculateEstimate() {
+            // Get form values
+            const wallLength = parseFloat(document.getElementById('wallLength').value);
+            const wallHeight = parseFloat(document.getElementById('wallHeight').value);
+            const chbSize = parseFloat(document.getElementById('chbSize').value);
+            
+            // Opening values
+            const doorCount = parseInt(document.getElementById('doorCount').value);
+            const doorWidth = parseFloat(document.getElementById('doorWidth').value);
+            const doorHeight = parseFloat(document.getElementById('doorHeight').value);
+            const windowCount = parseInt(document.getElementById('windowCount').value);
+            const windowWidth = parseFloat(document.getElementById('windowWidth').value);
+            const windowHeight = parseFloat(document.getElementById('windowHeight').value);
+            
+            // Calculate areas
+            const grossWallArea = wallLength * wallHeight;
+            const doorArea = doorCount * doorWidth * doorHeight;
+            const windowArea = windowCount * windowWidth * windowHeight;
+            const netWallArea = grossWallArea - doorArea - windowArea;
+            
+            // Validate net wall area
+            if (netWallArea <= 0) {
+                document.getElementById('results').innerHTML = `
+                    <div class="alert alert-danger">
+                        Error: Total opening area exceeds wall area. Please check your dimensions.
+                    </div>
+                `;
+                return;
+            }
+            
+            // Calculate CHB quantity (standard CHB size: 0.4m x 0.2m = 0.08m² each)
+            const chbArea = 0.4 * 0.2; // Standard CHB face area
+            const chbQuantity = Math.ceil(netWallArea / chbArea);
+            
+            // Calculate mortar volume (assume 0.01m³ mortar per m² of wall)
+            const mortarVolume = netWallArea * 0.01;
+            
+            // Get mortar ratio
+            const mortarRatio = document.getElementById('mortarRatio').value;
+            const [cementPart, sandPart] = mortarRatio.split(':').map(Number);
+            const totalParts = cementPart + sandPart;
+            
+            // Calculate cement and sand for mortar
+            // 1m³ mortar requires about 9 bags of cement for 1:3 mix
+            const cementBagsMortar = Math.ceil(mortarVolume * (cementPart / totalParts) * 9);
+            const sandMortar = mortarVolume * (sandPart / totalParts);
+            
+            // Calculate reinforcement
+            const verticalSpacing = parseFloat(document.getElementById('verticalBars').value) / 1000; // Convert to meters
+            const horizontalLayers = parseInt(document.getElementById('horizontalBars').value);
+            const rebarDiameter = parseInt(document.getElementById('rebarDiameter').value);
+            
+            // Calculate number of vertical bars
+            const verticalBarsCount = Math.ceil(wallLength / verticalSpacing) + 1;
+            const verticalRebarLength = verticalBarsCount * wallHeight;
+            
+            // Calculate number of horizontal bars (every 3 layers typically, each CHB layer is 0.2m)
+            const chbLayers = Math.ceil(wallHeight / 0.2);
+            const horizontalBarsCount = Math.ceil(chbLayers / horizontalLayers);
+            const horizontalRebarLength = horizontalBarsCount * wallLength;
+            
+            // Total rebar length with lap splices and hooks if included
+            const includeLaps = document.getElementById('includeLaps').checked;
+            const lapLength = includeLaps ? 0.4 : 0; // 40d lap length assumption
+            const hookLength = includeLaps ? 0.15 : 0; // Standard hook allowance
+            
+            const totalRebarLength = (verticalRebarLength + horizontalRebarLength) * 
+                                    (1 + lapLength + hookLength);
+            
+            // Calculate rebar weight (kg) - using formula: (d²/162) * length
+            const rebarWeight = Math.ceil((rebarDiameter * rebarDiameter / 162) * totalRebarLength);
+            
+            // Calculate plaster materials if included
+            let plasterCementBags = 0;
+            let plasterSand = 0;
+            const includePlaster = document.getElementById('plastering').checked;
+            
+            if (includePlaster) {
+                const plasterThickness = parseFloat(document.getElementById('plasterThickness').value) / 1000; // Convert to meters
+                const plasterVolume = netWallArea * 2 * plasterThickness; // Both sides
+                
+                const plasterRatio = document.getElementById('plasterRatio').value;
+                const [pCementPart, pSandPart] = plasterRatio.split(':').map(Number);
+                const pTotalParts = pCementPart + pSandPart;
+                
+                // 1m³ plaster requires about 12 bags of cement for 1:3 mix
+                plasterCementBags = Math.ceil(plasterVolume * (pCementPart / pTotalParts) * 12);
+                plasterSand = plasterVolume * (pSandPart / pTotalParts);
+            }
+            
+            // Calculate labor requirements
+            let productivityRateValue;
+            if (document.getElementById('productivityRate').value === 'custom') {
+                productivityRateValue = parseFloat(document.getElementById('customRate').value);
+            } else {
+                productivityRateValue = parseFloat(document.getElementById('productivityRate').value);
+            }
+            
+            const laborDays = netWallArea / productivityRateValue;
+            
+            // Get crew information
+            const masons = parseInt(document.getElementById('masons').value);
+            const helpers = parseInt(document.getElementById('helpers').value);
+            const carpenters = parseInt(document.getElementById('carpenters').value);
+            
+            // Calculate costs
+            const chbCost = parseFloat(document.getElementById('chbCost').value);
+            const cementCost = parseFloat(document.getElementById('cementCost').value);
+            const sandCost = parseFloat(document.getElementById('sandCost').value);
+            const rebarCostPerKg = parseFloat(document.getElementById('rebarCost').value);
+            
+            const masonDailyRate = parseFloat(document.getElementById('masonDailyRate').value);
+            const helperDailyRate = parseFloat(document.getElementById('helperDailyRate').value);
+            const carpenterDailyRate = parseFloat(document.getElementById('carpenterDailyRate').value);
+            
+            // Material costs
+            const totalChbCost = chbQuantity * chbCost;
+            const totalCementCost = (cementBagsMortar + plasterCementBags) * cementCost;
+            const totalSandCost = (sandMortar + plasterSand) * sandCost;
+            const totalRebarCost = rebarWeight * rebarCostPerKg;
+            
+            const totalMaterialCost = totalChbCost + totalCementCost + totalSandCost + totalRebarCost;
+            
+            // Labor costs
+            const totalMasonCost = masons * masonDailyRate * laborDays;
+            const totalHelperCost = helpers * helperDailyRate * laborDays;
+            const totalCarpenterCost = carpenters * carpenterDailyRate * laborDays;
+            
+            const totalLaborCost = totalMasonCost + totalHelperCost + totalCarpenterCost;
+            
+            // Apply waste factor
+            const wasteFactor = parseFloat(document.getElementById('wasteFactor').value) / 100;
+            const totalWithWaste = totalMaterialCost * (1 + wasteFactor);
+            
+            // Apply overhead and profit
+            const overhead = parseFloat(document.getElementById('overhead').value) / 100;
+            const profitMargin = parseFloat(document.getElementById('profitMargin').value) / 100;
+            
+            const overheadAmount = (totalWithWaste + totalLaborCost) * overhead;
+            const profitAmount = (totalWithWaste + totalLaborCost + overheadAmount) * profitMargin;
+            
+            const totalProjectCost = totalWithWaste + totalLaborCost + overheadAmount + profitAmount;
+            
+            // Display results
+            displayResults({
+                wallLength,
+                wallHeight,
+                grossWallArea,
+                doorArea,
+                windowArea,
+                netWallArea,
+                chbQuantity,
+                cementBagsMortar,
+                sandMortar,
+                plasterCementBags,
+                plasterSand,
+                rebarWeight,
+                totalRebarLength,
+                laborDays,
+                totalMaterialCost,
+                totalLaborCost,
+                totalWithWaste,
+                overheadAmount,
+                profitAmount,
+                totalProjectCost
+            });
+            
+            // Generate BOQ
+            generateBOQ({
+                chbQuantity,
+                cementBagsMortar,
+                sandMortar,
+                plasterCementBags,
+                plasterSand,
+                rebarWeight,
+                laborDays,
+                masons,
+                helpers,
+                carpenters
+            });
+            
+            // Generate cost breakdown
+            generateCostBreakdown({
+                totalChbCost,
+                totalCementCost,
+                totalSandCost,
+                totalRebarCost,
+                totalMasonCost,
+                totalHelperCost,
+                totalCarpenterCost,
+                wasteFactor,
+                overheadAmount,
+                profitAmount,
+                totalProjectCost,
+                netWallArea
+            });
+            
+            // Update visualization
+            drawWallVisualization();
+        }
+        
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            resultsDiv.innerHTML = `
+                <div class="section">
+                    <h3>Wall Dimensions</h3>
+                    <p>Length: ${data.wallLength} m</p>
+                    <p>Height: ${data.wallHeight} m</p>
+                    <p>Gross Wall Area: ${data.grossWallArea.toFixed(2)} m²</p>
+                    <p>Door Area: ${data.doorArea.toFixed(2)} m²</p>
+                    <p>Window Area: ${data.windowArea.toFixed(2)} m²</p>
+                    <p><strong>Net Wall Area: ${data.netWallArea.toFixed(2)} m²</strong></p>
+                </div>
+                
+                <div class="section">
+                    <h3>Material Quantities</h3>
+                    <p>CHB Blocks: ${data.chbQuantity} pcs</p>
+                    <p>Cement for Mortar: ${data.cementBagsMortar} bags</p>
+                    <p>Sand for Mortar: ${data.sandMortar.toFixed(2)} m³</p>
+                    <p>Cement for Plaster: ${data.plasterCementBags} bags</p>
+                    <p>Sand for Plaster: ${data.plasterSand.toFixed(2)} m³</p>
+                    <p>Rebar: ${data.rebarWeight} kg (${data.totalRebarLength.toFixed(2)} m)</p>
+                </div>
+                
+                <div class="section">
+                    <h3>Labor Requirements</h3>
+                    <p>Estimated Work Days: ${data.laborDays.toFixed(1)} days</p>
+                </div>
+                
+                <div class="section">
+                    <h3>Cost Summary</h3>
+                    <p>Material Cost: ₱${data.totalMaterialCost.toFixed(2)}</p>
+                    <p>Labor Cost: ₱${data.totalLaborCost.toFixed(2)}</p>
+                    <p>Material Cost with Waste: ₱${data.totalWithWaste.toFixed(2)}</p>
+                    <p>Overhead: ₱${data.overheadAmount.toFixed(2)}</p>
+                    <p>Profit Margin: ₱${data.profitAmount.toFixed(2)}</p>
+                    <p><strong>Total Project Cost: ₱${data.totalProjectCost.toFixed(2)}</strong></p>
+                    <p>Cost per m²: ₱${(data.totalProjectCost / data.netWallArea).toFixed(2)}</p>
+                </div>
+            `;
+        }
+        
+        function generateBOQ(data) {
+            const boqDiv = document.getElementById('boq');
+            
+            boqDiv.innerHTML = `
+                <h3>Materials</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Quantity</th>
+                            <th>Unit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>CHB Blocks</td>
+                            <td>${data.chbQuantity}</td>
+                            <td>pcs</td>
+                        </tr>
+                        <tr>
+                            <td>Cement (mortar)</td>
+                            <td>${data.cementBagsMortar}</td>
+                            <td>bags</td>
+                        </tr>
+                        <tr>
+                            <td>Sand (mortar)</td>
+                            <td>${data.sandMortar.toFixed(2)}</td>
+                            <td>m³</td>
+                        </tr>
+                        <tr>
+                            <td>Cement (plaster)</td>
+                            <td>${data.plasterCementBags}</td>
+                            <td>bags</td>
+                        </tr>
+                        <tr>
+                            <td>Sand (plaster)</td>
+                            <td>${data.plasterSand.toFixed(2)}</td>
+                            <td>m³</td>
+                        </tr>
+                        <tr>
+                            <td>Rebar (${document.getElementById('rebarDiameter').value}mm)</td>
+                            <td>${data.rebarWeight}</td>
+                            <td>kg</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3>Labor</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Trade</th>
+                            <th>Quantity</th>
+                            <th>Days</th>
+                            <th>Total Days</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Mason</td>
+                            <td>${data.masons}</td>
+                            <td>${data.laborDays.toFixed(1)}</td>
+                            <td>${(data.masons * data.laborDays).toFixed(1)}</td>
+                        </tr>
+                        <tr>
+                            <td>Helper</td>
+                            <td>${data.helpers}</td>
+                            <td>${data.laborDays.toFixed(1)}</td>
+                            <td>${(data.helpers * data.laborDays).toFixed(1)}</td>
+                        </tr>
+                        <tr>
+                            <td>Carpenter</td>
+                            <td>${data.carpenters}</td>
+                            <td>${data.laborDays.toFixed(1)}</td>
+                            <td>${(data.carpenters * data.laborDays).toFixed(1)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        function generateCostBreakdown(data) {
+            const costDiv = document.getElementById('costBreakdown');
+            
+            costDiv.innerHTML = `
+                <h3>Direct Costs</h3>
+                <div class="cost-summary">
+                    <div class="cost-item">
+                        <span>CHB Blocks:</span>
+                        <span>₱${data.totalChbCost.toFixed(2)}</span>
+                    </div>
+                    <div class="cost-item">
+                        <span>Cement:</span>
+                        <span>₱${data.totalCementCost.toFixed(2)}</span>
+                    </div>
+                    <div class="cost-item">
+                        <span>Sand:</span>
+                        <span>₱${data.totalSandCost.toFixed(2)}</span>
+                    </div>
+                    <div class="cost-item">
+                        <span>Rebar:</span>
+                        <span>₱${data.totalRebarCost.toFixed(2)}</span>
+                    </div>
+                    <div class="cost-item">
+                        <span>Mason Labor:</span>
+                        <span>₱${data.totalMasonCost.toFixed(2)}</span>
+                    </div>
+                    <div class="cost-item">
+                        <span>Helper Labor:</span>
+                        <span>₱${data.totalHelperCost.toFixed(2)}</span>
+                    </div>
+                    <div class="cost-item">
+                        <span>Carpenter Labor:</span>
+                        <span>₱${data.totalCarpenterCost.toFixed(2)}</span>
+                    </div>
+                    <div class="cost-item">
+                        <span>Waste (${(data.wasteFactor * 100).toFixed(0)}%):</span>
+                        <span>₱${(data.totalChbCost + data.totalCementCost + data.totalSandCost + data.totalRebarCost) * data.wasteFactor.toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                <h3>Indirect Costs</h3>
+                <div class="cost-summary">
+                    <div class="cost-item">
+                        <span>Overhead:</span>
+                        <span>₱${data.overheadAmount.toFixed(2)}</span>
+                    </div>
+                    <div class="cost-item">
+                        <span>Profit Margin:</span>
+                        <span>₱${data.profitAmount.toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                <div class="cost-summary">
+                    <div class="cost-item cost-total">
+                        <span>Total Project Cost:</span>
+                        <span>₱${data.totalProjectCost.toFixed(2)}</span>
+                    </div>
+                    <div class="cost-item">
+                        <span>Cost per m²:</span>
+                        <span>₱${(data.totalProjectCost / data.netWallArea).toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function drawWallVisualization() {
+            const canvas = document.getElementById('wallCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Get wall dimensions for scaling
+            const wallLength = parseFloat(document.getElementById('wallLength').value);
+            const wallHeight = parseFloat(document.getElementById('wallHeight').value);
+            
+            // Calculate scaling factors to fit wall in canvas
+            const scaleX = canvas.width * 0.8 / wallLength;
+            const scaleY = canvas.height * 0.8 / wallHeight;
+            const scale = Math.min(scaleX, scaleY);
+            
+            // Calculate centered position
+            const drawWidth = wallLength * scale;
+            const drawHeight = wallHeight * scale;
+            const startX = (canvas.width - drawWidth) / 2;
+            const startY = (canvas.height - drawHeight) / 2;
+            
+            // Draw wall outline
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(startX, startY, drawWidth, drawHeight);
+            
+            // Draw CHB pattern
+            const chbWidth = 0.4 * scale;  // Standard CHB width
+            const chbHeight = 0.2 * scale; // Standard CHB height
+            
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            
+            for (let y = 0; y < wallHeight; y += 0.2) {
+                for (let x = 0; x < wallLength; x += 0.4) {
+                    const drawX = startX + x * scale;
+                    const drawY = startY + y * scale;
+                    
+                    if (drawX + chbWidth <= startX + drawWidth && 
+                        drawY + chbHeight <= startY + drawHeight) {
+                        ctx.strokeRect(drawX, drawY, chbWidth, chbHeight);
+                    }
+                }
+            }
+            
+            // Draw openings if any
+            const doorCount = parseInt(document.getElementById('doorCount').value);
+            const doorWidth = parseFloat(document.getElementById('doorWidth').value);
+            const doorHeight = parseFloat(document.getElementById('doorHeight').value);
+            
+            const windowCount = parseInt(document.getElementById('windowCount').value);
+            const windowWidth = parseFloat(document.getElementById('windowWidth').value);
+            const windowHeight = parseFloat(document.getElementById('windowHeight').value);
+            
+            ctx.fillStyle = 'rgba(200, 200, 255, 0.5)';
+            
+            // Draw doors
+            for (let i = 0; i < doorCount; i++) {
+                const doorX = startX + (i * (wallLength / (doorCount + 1))) * scale;
+                const doorY = startY + (wallHeight - doorHeight) * scale;
+                const doorDrawWidth = doorWidth * scale;
+                const doorDrawHeight = doorHeight * scale;
+                
+                ctx.fillRect(doorX, doorY, doorDrawWidth, doorDrawHeight);
+                ctx.strokeRect(doorX, doorY, doorDrawWidth, doorDrawHeight);
+            }
+            
+            // Draw windows
+            for (let i = 0; i < windowCount; i++) {
+                const windowX = startX + ((i + 0.5) * (wallLength / (windowCount + 1))) * scale;
+                const windowY = startY + (wallHeight * 0.3) * scale; // Windows at 30% height
+                const windowDrawWidth = windowWidth * scale;
+                const windowDrawHeight = windowHeight * scale;
+                
+                ctx.fillRect(windowX, windowY, windowDrawWidth, windowDrawHeight);
+                ctx.strokeRect(windowX, windowY, windowDrawWidth, windowDrawHeight);
+            }
+            
+            // Draw reinforcement if visible
+            const verticalSpacing = parseFloat(document.getElementById('verticalBars').value) / 1000;
+            const horizontalLayers = parseInt(document.getElementById('horizontalBars').value);
+            
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            
+            // Draw vertical bars
+            for (let x = 0; x < wallLength; x += verticalSpacing) {
+                const barX = startX + x * scale;
+                ctx.beginPath();
+                ctx.moveTo(barX, startY);
+                ctx.lineTo(barX, startY + drawHeight);
+                ctx.stroke();
+            }
+            
+            // Draw horizontal bars
+            for (let y = 0.2 * horizontalLayers; y < wallHeight; y += 0.2 * horizontalLayers) {
+                const barY = startY + y * scale;
+                ctx.beginPath();
+                ctx.moveTo(startX, barY);
+                ctx.lineTo(startX + drawWidth, barY);
+                ctx.stroke();
+            }
+            
+            // Add title
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.fillText('CHB Wall Visualization', 10, 20);
+            
+            // Add scale indicator
+            const meterInPixels = 1 * scale;
+            ctx.fillText('Scale: 1m', 10, 40);
+            ctx.beginPath();
+            ctx.moveTo(10, 45);
+            ctx.lineTo(10 + meterInPixels, 45);
+            ctx.stroke();
+        }
+    </script>
+</body>
+</html>
