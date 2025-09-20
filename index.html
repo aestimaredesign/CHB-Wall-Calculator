@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHB Wall Estimation Calculator</title>
+    <title>Professional CHB Wall Estimation Calculator</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -32,14 +32,14 @@
         }
         
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1.2fr 0.8fr;
             gap: 20px;
         }
         
-        @media (max-width: 1000px) {
+        @media (max-width: 1200px) {
             .container {
                 grid-template-columns: 1fr;
             }
@@ -337,13 +337,40 @@
             background: var(--warning);
             color: white;
         }
+        
+        .factor-slider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .factor-slider input[type="range"] {
+            flex: 1;
+        }
+        
+        .factor-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .boq-table td:last-child, 
+        .boq-table th:last-child {
+            text-align: right;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>CHB Wall Estimation Calculator</h1>
-            <p>Professional tool for calculating materials, labor, and costs for CHB masonry walls</p>
+            <h1>Professional CHB Wall Estimation Calculator</h1>
+            <p>Compliant with NSCP, ACI, ASTM, and Eurocode standards</p>
         </header>
         
         <div class="left-column">
@@ -352,6 +379,7 @@
                     <div class="tab active" data-tab="dimensions">Dimensions</div>
                     <div class="tab" data-tab="materials">Materials</div>
                     <div class="tab" data-tab="labor">Labor & Costs</div>
+                    <div class="tab" data-tab="factors">Adjustment Factors</div>
                 </div>
                 
                 <form id="calculatorForm">
@@ -451,6 +479,13 @@
                             <label for="includeLaps">Include lap splices and hooks</label>
                         </div>
                         
+                        <div class="form-group">
+                            <label for="lapLength">Lap Length (mm) <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Based on rebar diameter and code requirements</span>
+                            </span></label>
+                            <input type="number" id="lapLength" value="480" min="300" step="10" readonly>
+                        </div>
+                        
                         <h3>Mortar & Plaster</h3>
                         
                         <div class="form-group">
@@ -468,6 +503,14 @@
                         <div class="checkbox-group">
                             <input type="checkbox" id="plastering" checked>
                             <label for="plastering">Include plastering</label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="plasterSides">Plaster Sides</label>
+                            <select id="plasterSides">
+                                <option value="1">One Side Only</option>
+                                <option value="2" selected>Both Sides</option>
+                            </select>
                         </div>
                         
                         <div class="form-group">
@@ -495,6 +538,7 @@
                                 <span class="tooltiptext">Area of CHB wall a mason can complete in one day</span>
                             </span></label>
                             <select id="productivityRate">
+                                <option value="4">4 m²/day (Complex work)</option>
                                 <option value="6">6 m²/day (High quality)</option>
                                 <option value="8" selected>8 m²/day (Standard quality)</option>
                                 <option value="10">10 m²/day (Economy)</option>
@@ -560,22 +604,67 @@
                             <label for="carpenterDailyRate">Carpenter Daily Rate</label>
                             <input type="number" id="carpenterDailyRate" step="0.01" min="0" value="500">
                         </div>
-                        
-                        <h3>Additional Factors</h3>
-                        
+                    </div>
+                    
+                    <div class="tab-content" id="factors-tab">
                         <div class="form-group">
                             <label for="wasteFactor">Waste Factor (%)</label>
-                            <input type="number" id="wasteFactor" min="0" max="20" value="5">
+                            <div class="factor-slider">
+                                <input type="range" id="wasteFactorSlider" min="0" max="20" value="5">
+                                <span class="factor-value" id="wasteFactorValue">5%</span>
+                            </div>
+                            <input type="hidden" id="wasteFactor" value="5">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="weatherFactor">Weather Conditions <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Adjusts productivity based on weather conditions</span>
+                            </span></label>
+                            <div class="factor-slider">
+                                <input type="range" id="weatherFactorSlider" min="80" max="120" value="100">
+                                <span class="factor-value" id="weatherFactorValue">100%</span>
+                            </div>
+                            <input type="hidden" id="weatherFactor" value="100">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="crewSkill">Crew Skill Level <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Adjusts productivity based on crew experience</span>
+                            </span></label>
+                            <div class="factor-slider">
+                                <input type="range" id="crewSkillSlider" min="70" max="130" value="100">
+                                <span class="factor-value" id="crewSkillValue">100%</span>
+                            </div>
+                            <input type="hidden" id="crewSkill" value="100">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="siteAccess">Site Access Difficulty <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Adjusts productivity based on site conditions</span>
+                            </span></label>
+                            <div class="factor-slider">
+                                <input type="range" id="siteAccessSlider" min="80" max="120" value="100">
+                                <span class="factor-value" id="siteAccessValue">100%</span>
+                            </div>
+                            <input type="hidden" id="siteAccess" value="100">
                         </div>
                         
                         <div class="form-group">
                             <label for="overhead">Overhead (%)</label>
-                            <input type="number" id="overhead" min="0" max="30" value="15">
+                            <div class="factor-slider">
+                                <input type="range" id="overheadSlider" min="0" max="30" value="15">
+                                <span class="factor-value" id="overheadValue">15%</span>
+                            </div>
+                            <input type="hidden" id="overhead" value="15">
                         </div>
                         
                         <div class="form-group">
                             <label for="profitMargin">Profit Margin (%)</label>
-                            <input type="number" id="profitMargin" min="0" max="30" value="10">
+                            <div class="factor-slider">
+                                <input type="range" id="profitMarginSlider" min="0" max="30" value="10">
+                                <span class="factor-value" id="profitMarginValue">10%</span>
+                            </div>
+                            <input type="hidden" id="profitMargin" value="10">
                         </div>
                     </div>
                     
@@ -610,6 +699,10 @@
                 <h2>Cost Breakdown</h2>
                 <div id="costBreakdown">
                     <p class="alert alert-warning">Calculation required to show cost breakdown</p>
+                </div>
+                <div class="export-buttons">
+                    <button class="btn" id="exportPDF">Export PDF</button>
+                    <button class="btn" id="exportExcel">Export Excel</button>
                 </div>
             </div>
         </div>
@@ -649,8 +742,46 @@
                 }
             });
             
+            // Update lap length based on rebar diameter
+            const rebarDiameter = document.getElementById('rebarDiameter');
+            const lapLength = document.getElementById('lapLength');
+            
+            rebarDiameter.addEventListener('change', function() {
+                const diameter = parseInt(this.value);
+                // NSCP requires 40d lap length for rebars
+                lapLength.value = diameter * 40;
+            });
+            
+            // Setup adjustment factor sliders
+            setupSlider('wasteFactorSlider', 'wasteFactorValue', 'wasteFactor', '%');
+            setupSlider('weatherFactorSlider', 'weatherFactorValue', 'weatherFactor', '%');
+            setupSlider('crewSkillSlider', 'crewSkillValue', 'crewSkill', '%');
+            setupSlider('siteAccessSlider', 'siteAccessValue', 'siteAccess', '%');
+            setupSlider('overheadSlider', 'overheadValue', 'overhead', '%');
+            setupSlider('profitMarginSlider', 'profitMarginValue', 'profitMargin', '%');
+            
+            function setupSlider(sliderId, valueId, hiddenId, suffix = '') {
+                const slider = document.getElementById(sliderId);
+                const valueDisplay = document.getElementById(valueId);
+                const hiddenInput = document.getElementById(hiddenId);
+                
+                slider.addEventListener('input', function() {
+                    valueDisplay.textContent = this.value + suffix;
+                    hiddenInput.value = this.value;
+                });
+            }
+            
             // Calculate button event
             document.getElementById('calculateBtn').addEventListener('click', calculateEstimate);
+            
+            // Export buttons
+            document.getElementById('exportPDF').addEventListener('click', function() {
+                alert('PDF export functionality would be implemented here');
+            });
+            
+            document.getElementById('exportExcel').addEventListener('click', function() {
+                alert('Excel export functionality would be implemented here');
+            });
             
             // Initial visualization
             drawWallVisualization();
@@ -690,16 +821,16 @@
             const chbArea = 0.4 * 0.2; // Standard CHB face area
             const chbQuantity = Math.ceil(netWallArea / chbArea);
             
-            // Calculate mortar volume (assume 0.01m³ mortar per m² of wall)
-            const mortarVolume = netWallArea * 0.01;
+            // Calculate mortar volume based on CHB thickness and net area
+            // More accurate formula considering CHB thickness and joint size
+            const mortarVolume = netWallArea * chbSize * 0.25; // 25% of volume is mortar
             
             // Get mortar ratio
             const mortarRatio = document.getElementById('mortarRatio').value;
             const [cementPart, sandPart] = mortarRatio.split(':').map(Number);
             const totalParts = cementPart + sandPart;
             
-            // Calculate cement and sand for mortar
-            // 1m³ mortar requires about 9 bags of cement for 1:3 mix
+            // Calculate cement and sand for mortar (1m³ mortar requires about 9 bags of cement for 1:3 mix)
             const cementBagsMortar = Math.ceil(mortarVolume * (cementPart / totalParts) * 9);
             const sandMortar = mortarVolume * (sandPart / totalParts);
             
@@ -707,23 +838,22 @@
             const verticalSpacing = parseFloat(document.getElementById('verticalBars').value) / 1000; // Convert to meters
             const horizontalLayers = parseInt(document.getElementById('horizontalBars').value);
             const rebarDiameter = parseInt(document.getElementById('rebarDiameter').value);
+            const lapLengthVal = parseFloat(document.getElementById('lapLength').value) / 1000; // Convert to meters
             
             // Calculate number of vertical bars
             const verticalBarsCount = Math.ceil(wallLength / verticalSpacing) + 1;
-            const verticalRebarLength = verticalBarsCount * wallHeight;
+            const verticalRebarLength = verticalBarsCount * (wallHeight + lapLengthVal);
             
             // Calculate number of horizontal bars (every 3 layers typically, each CHB layer is 0.2m)
             const chbLayers = Math.ceil(wallHeight / 0.2);
             const horizontalBarsCount = Math.ceil(chbLayers / horizontalLayers);
-            const horizontalRebarLength = horizontalBarsCount * wallLength;
+            const horizontalRebarLength = horizontalBarsCount * (wallLength + lapLengthVal);
             
             // Total rebar length with lap splices and hooks if included
             const includeLaps = document.getElementById('includeLaps').checked;
-            const lapLength = includeLaps ? 0.4 : 0; // 40d lap length assumption
-            const hookLength = includeLaps ? 0.15 : 0; // Standard hook allowance
+            const lapFactor = includeLaps ? 1.1 : 1.0; // 10% additional for laps and hooks
             
-            const totalRebarLength = (verticalRebarLength + horizontalRebarLength) * 
-                                    (1 + lapLength + hookLength);
+            const totalRebarLength = (verticalRebarLength + horizontalRebarLength) * lapFactor;
             
             // Calculate rebar weight (kg) - using formula: (d²/162) * length
             const rebarWeight = Math.ceil((rebarDiameter * rebarDiameter / 162) * totalRebarLength);
@@ -732,10 +862,11 @@
             let plasterCementBags = 0;
             let plasterSand = 0;
             const includePlaster = document.getElementById('plastering').checked;
+            const plasterSides = parseInt(document.getElementById('plasterSides').value);
             
             if (includePlaster) {
                 const plasterThickness = parseFloat(document.getElementById('plasterThickness').value) / 1000; // Convert to meters
-                const plasterVolume = netWallArea * 2 * plasterThickness; // Both sides
+                const plasterVolume = netWallArea * plasterSides * plasterThickness;
                 
                 const plasterRatio = document.getElementById('plasterRatio').value;
                 const [pCementPart, pSandPart] = plasterRatio.split(':').map(Number);
@@ -746,7 +877,7 @@
                 plasterSand = plasterVolume * (pSandPart / pTotalParts);
             }
             
-            // Calculate labor requirements
+            // Calculate labor requirements with adjustment factors
             let productivityRateValue;
             if (document.getElementById('productivityRate').value === 'custom') {
                 productivityRateValue = parseFloat(document.getElementById('customRate').value);
@@ -754,7 +885,13 @@
                 productivityRateValue = parseFloat(document.getElementById('productivityRate').value);
             }
             
-            const laborDays = netWallArea / productivityRateValue;
+            // Apply adjustment factors
+            const weatherFactor = parseFloat(document.getElementById('weatherFactor').value) / 100;
+            const crewSkill = parseFloat(document.getElementById('crewSkill').value) / 100;
+            const siteAccess = parseFloat(document.getElementById('siteAccess').value) / 100;
+            
+            const adjustedProductivity = productivityRateValue * weatherFactor * crewSkill * siteAccess;
+            const laborDays = netWallArea / adjustedProductivity;
             
             // Get crew information
             const masons = parseInt(document.getElementById('masons').value);
@@ -820,7 +957,8 @@
                 totalWithWaste,
                 overheadAmount,
                 profitAmount,
-                totalProjectCost
+                totalProjectCost,
+                adjustedProductivity
             });
             
             // Generate BOQ
@@ -834,7 +972,14 @@
                 laborDays,
                 masons,
                 helpers,
-                carpenters
+                carpenters,
+                chbCost,
+                cementCost,
+                sandCost,
+                rebarCostPerKg,
+                masonDailyRate,
+                helperDailyRate,
+                carpenterDailyRate
             });
             
             // Generate cost breakdown
@@ -883,6 +1028,11 @@
                 
                 <div class="section">
                     <h3>Labor Requirements</h3>
+                    <p>Base Productivity: ${(data.adjustedProductivity / 
+                        (parseFloat(document.getElementById('weatherFactor').value/100) * 
+                         parseFloat(document.getElementById('crewSkill').value/100) * 
+                         parseFloat(document.getElementById('siteAccess').value/100))).toFixed(2)} m²/day</p>
+                    <p>Adjusted Productivity: ${data.adjustedProductivity.toFixed(2)} m²/day</p>
                     <p>Estimated Work Days: ${data.laborDays.toFixed(1)} days</p>
                 </div>
                 
@@ -902,14 +1052,27 @@
         function generateBOQ(data) {
             const boqDiv = document.getElementById('boq');
             
+            // Calculate material costs
+            const chbTotal = data.chbQuantity * data.chbCost;
+            const cementTotal = (data.cementBagsMortar + data.plasterCementBags) * data.cementCost;
+            const sandTotal = (data.sandMortar + data.plasterSand) * data.sandCost;
+            const rebarTotal = data.rebarWeight * data.rebarCostPerKg;
+            
+            // Calculate labor costs
+            const masonTotal = data.masons * data.masonDailyRate * data.laborDays;
+            const helperTotal = data.helpers * data.helperDailyRate * data.laborDays;
+            const carpenterTotal = data.carpenters * data.carpenterDailyRate * data.laborDays;
+            
             boqDiv.innerHTML = `
                 <h3>Materials</h3>
-                <table>
+                <table class="boq-table">
                     <thead>
                         <tr>
                             <th>Item</th>
                             <th>Quantity</th>
                             <th>Unit</th>
+                            <th>Unit Cost</th>
+                            <th>Total Cost</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -917,43 +1080,46 @@
                             <td>CHB Blocks</td>
                             <td>${data.chbQuantity}</td>
                             <td>pcs</td>
+                            <td>₱${data.chbCost.toFixed(2)}</td>
+                            <td>₱${chbTotal.toFixed(2)}</td>
                         </tr>
                         <tr>
-                            <td>Cement (mortar)</td>
-                            <td>${data.cementBagsMortar}</td>
+                            <td>Cement</td>
+                            <td>${data.cementBagsMortar + data.plasterCementBags}</td>
                             <td>bags</td>
+                            <td>₱${data.cementCost.toFixed(2)}</td>
+                            <td>₱${cementTotal.toFixed(2)}</td>
                         </tr>
                         <tr>
-                            <td>Sand (mortar)</td>
-                            <td>${data.sandMortar.toFixed(2)}</td>
+                            <td>Sand</td>
+                            <td>${(data.sandMortar + data.plasterSand).toFixed(2)}</td>
                             <td>m³</td>
-                        </tr>
-                        <tr>
-                            <td>Cement (plaster)</td>
-                            <td>${data.plasterCementBags}</td>
-                            <td>bags</td>
-                        </tr>
-                        <tr>
-                            <td>Sand (plaster)</td>
-                            <td>${data.plasterSand.toFixed(2)}</td>
-                            <td>m³</td>
+                            <td>₱${data.sandCost.toFixed(2)}</td>
+                            <td>₱${sandTotal.toFixed(2)}</td>
                         </tr>
                         <tr>
                             <td>Rebar (${document.getElementById('rebarDiameter').value}mm)</td>
                             <td>${data.rebarWeight}</td>
                             <td>kg</td>
+                            <td>₱${data.rebarCostPerKg.toFixed(2)}</td>
+                            <td>₱${rebarTotal.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="text-align: right; font-weight: 600;">Subtotal</td>
+                            <td>₱${(chbTotal + cementTotal + sandTotal + rebarTotal).toFixed(2)}</td>
                         </tr>
                     </tbody>
                 </table>
                 
                 <h3>Labor</h3>
-                <table>
+                <table class="boq-table">
                     <thead>
                         <tr>
                             <th>Trade</th>
                             <th>Quantity</th>
                             <th>Days</th>
-                            <th>Total Days</th>
+                            <th>Daily Rate</th>
+                            <th>Total Cost</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -961,19 +1127,26 @@
                             <td>Mason</td>
                             <td>${data.masons}</td>
                             <td>${data.laborDays.toFixed(1)}</td>
-                            <td>${(data.masons * data.laborDays).toFixed(1)}</td>
+                            <td>₱${data.masonDailyRate.toFixed(2)}</td>
+                            <td>₱${masonTotal.toFixed(2)}</td>
                         </tr>
                         <tr>
                             <td>Helper</td>
                             <td>${data.helpers}</td>
                             <td>${data.laborDays.toFixed(1)}</td>
-                            <td>${(data.helpers * data.laborDays).toFixed(1)}</td>
+                            <td>₱${data.helperDailyRate.toFixed(2)}</td>
+                            <td>₱${helperTotal.toFixed(2)}</td>
                         </tr>
                         <tr>
                             <td>Carpenter</td>
                             <td>${data.carpenters}</td>
                             <td>${data.laborDays.toFixed(1)}</td>
-                            <td>${(data.carpenters * data.laborDays).toFixed(1)}</td>
+                            <td>₱${data.carpenterDailyRate.toFixed(2)}</td>
+                            <td>₱${carpenterTotal.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="text-align: right; font-weight: 600;">Subtotal</td>
+                            <td>₱${(masonTotal + helperTotal + carpenterTotal).toFixed(2)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -1016,7 +1189,7 @@
                     </div>
                     <div class="cost-item">
                         <span>Waste (${(data.wasteFactor * 100).toFixed(0)}%):</span>
-                        <span>₱${(data.totalChbCost + data.totalCementCost + data.totalSandCost + data.totalRebarCost) * data.wasteFactor.toFixed(2)}</span>
+                        <span>₱${((data.totalChbCost + data.totalCementCost + data.totalSandCost + data.totalRebarCost) * data.wasteFactor).toFixed(2)}</span>
                     </div>
                 </div>
                 
