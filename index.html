@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional CHB Wall Estimation Calculator</title>
+    <title>CHB Wall Estimation Calculator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -92,7 +93,7 @@
             font-weight: 500;
         }
         
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -100,7 +101,7 @@
             font-size: 16px;
         }
         
-        input:focus, select:focus {
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: var(--secondary);
             box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
@@ -469,16 +470,50 @@
             border-radius: 4px;
             margin-top: 15px;
         }
+        
+        .plaster-options {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        
+        .project-info {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Professional CHB Wall Estimation Calculator</h1>
+            <h1>CHB Wall Estimation Calculator</h1>
             <p>Compliant with NSCP, ACI, ASTM, and Eurocode standards</p>
         </header>
         
         <div class="left-column">
+            <div class="project-info">
+                <h2>Project Information</h2>
+                <div class="form-group">
+                    <label for="projectName">Project Name</label>
+                    <input type="text" id="projectName" value="Residential Boundary Wall">
+                </div>
+                <div class="form-group">
+                    <label for="clientName">Client Name</label>
+                    <input type="text" id="clientName" value="John Dela Cruz">
+                </div>
+                <div class="form-group">
+                    <label for="projectLocation">Project Location</label>
+                    <input type="text" id="projectLocation" value="Manila, Philippines">
+                </div>
+                <div class="form-group">
+                    <label for="preparedBy">Prepared By</label>
+                    <input type="text" id="preparedBy" value="Maria Santos, Civil Engineer">
+                </div>
+            </div>
+            
             <div class="card">
                 <div class="tabs">
                     <div class="tab active" data-tab="dimensions">Dimensions</div>
@@ -567,17 +602,17 @@
                         
                         <div class="rebar-options">
                             <div class="form-group">
-                                <label for="verticalBars">Vertical Bar Spacing (mm) <span class="tooltip">ℹ️
+                                <label for="rebarVertSpacing">Vertical Bar Spacing (mm) <span class="tooltip">ℹ️
                                     <span class="tooltiptext">Distance between vertical reinforcing bars</span>
                                 </span></label>
-                                <input type="number" id="verticalBars" value="800" min="400" step="100">
+                                <input type="number" id="rebarVertSpacing" value="800" min="400" step="100">
                             </div>
                             
                             <div class="form-group">
-                                <label for="horizontalBars">Horizontal Bar Layers <span class="tooltip">ℹ️
+                                <label for="rebarHorizSpacing">Horizontal Bar Layers <span class="tooltip">ℹ️
                                     <span class="tooltiptext">Number of CHB courses between horizontal bars (typically every 3rd course)</span>
                                 </span></label>
-                                <input type="number" id="horizontalBars" value="3" min="1" step="1">
+                                <input type="number" id="rebarHorizSpacing" value="3" min="1" step="1">
                             </div>
                             
                             <div class="form-group">
@@ -643,37 +678,64 @@
                             <label for="plastering">Include plastering</label>
                         </div>
                         
-                        <div class="form-group">
-                            <label for="plasterSides">Plaster Sides</label>
-                            <select id="plasterSides">
-                                <option value="1">One Side Only</option>
-                                <option value="2" selected>Both Sides</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="plasterRatio">Plaster Mix Ratio <span class="tooltip">ℹ️
-                                <span class="tooltiptext">Cement to sand ratio for plaster</span>
-                            </span></label>
-                            <select id="plasterRatio">
-                                <option value="1:2">1:2 (Rich mix)</option>
-                                <option value="1:3" selected>1:3 (Standard)</option>
-                                <option value="1:4">1:4 (Economy)</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="plasterCementFactor">Plaster Cement Factor (bags/m³) <span class="tooltip">ℹ️
-                                <span class="tooltiptext">Varies by standard and mix ratio</span>
-                            </span></label>
-                            <input type="number" id="plasterCementFactor" step="0.1" min="10" max="16" value="12">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="plasterThickness">Plaster Thickness (mm) <span class="tooltip">ℹ️
-                                <span class="tooltiptext">Thickness of plaster on each side</span>
-                            </span></label>
-                            <input type="number" id="plasterThickness" value="20" min="10" max="30" step="5">
+                        <div class="plaster-options">
+                            <div class="form-group">
+                                <label for="plasterSides">Plaster Sides</label>
+                                <select id="plasterSides">
+                                    <option value="1">One Side Only</option>
+                                    <option value="2" selected>Both Sides</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="plasterRatio">Plaster Mix Ratio <span class="tooltip">ℹ️
+                                    <span class="tooltiptext">Cement to sand ratio for plaster</span>
+                                </span></label>
+                                <select id="plasterRatio">
+                                    <option value="1:2">1:2 (Rich mix)</option>
+                                    <option value="1:3" selected>1:3 (Standard)</option>
+                                    <option value="1:4">1:4 (Economy)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="plasterCementFactor">Plaster Cement Factor (bags/m³) <span class="tooltip">ℹ️
+                                    <span class="tooltiptext">Varies by standard and mix ratio</span>
+                                </span></label>
+                                <input type="number" id="plasterCementFactor" step="0.1" min="10" max="16" value="12">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="plasterThickness">Plaster Thickness (mm) <span class="tooltip">ℹ️
+                                    <span class="tooltiptext">Thickness of plaster on each side</span>
+                                </span></label>
+                                <input type="number" id="plasterThickness" value="20" min="10" max="30" step="5">
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="differentFinishes">
+                                <label for="differentFinishes">Different finishes for inside/outside</label>
+                            </div>
+                            
+                            <div id="finishOptions" style="display: none;">
+                                <div class="form-group">
+                                    <label for="insideFinish">Inside Finish Type</label>
+                                    <select id="insideFinish">
+                                        <option value="skim">Skim Coat (5mm)</option>
+                                        <option value="standard" selected>Standard (20mm)</option>
+                                        <option value="rough">Rough Cast (25mm)</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="outsideFinish">Outside Finish Type</label>
+                                    <select id="outsideFinish">
+                                        <option value="skim">Skim Coat (5mm)</option>
+                                        <option value="standard" selected>Standard (20mm)</option>
+                                        <option value="rough">Rough Cast (25mm)</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -739,6 +801,18 @@
                         <div class="form-group">
                             <label for="carpenters">Carpenters (for forms)</label>
                             <input type="number" id="carpenters" min="0" value="1">
+                        </div>
+                        
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="includeFormwork">
+                            <label for="includeFormwork">Include formwork for footings/beams</label>
+                        </div>
+                        
+                        <div id="formworkOptions" style="display: none;">
+                            <div class="form-group">
+                                <label for="formworkArea">Formwork Area (m²)</label>
+                                <input type="number" id="formworkArea" min="0" step="0.1" value="5">
+                            </div>
                         </div>
                         
                         <h3>Costs</h3>
@@ -947,6 +1021,16 @@
                 });
             });
             
+            // Toggle different finishes option
+            document.getElementById('differentFinishes').addEventListener('change', function() {
+                document.getElementById('finishOptions').style.display = this.checked ? 'block' : 'none';
+            });
+            
+            // Toggle formwork option
+            document.getElementById('includeFormwork').addEventListener('change', function() {
+                document.getElementById('formworkOptions').style.display = this.checked ? 'block' : 'none';
+            });
+            
             // Custom productivity rate toggle
             const productivityRate = document.getElementById('productivityRate');
             const customRateContainer = document.getElementById('customRateContainer');
@@ -1048,7 +1132,7 @@
             });
             
             // Export buttons
-            document.getElementById('exportPDF').addEventListener('click', exportPDF);
+            document.getElementById('exportPDF').addEventListener('click', downloadPDF);
             document.getElementById('exportExcel').addEventListener('click', exportExcel);
             
             // Visualization controls
@@ -1215,8 +1299,8 @@
             const sandMortar = mortarVolume * (sandPart / totalParts);
             
             // Calculate reinforcement
-            const verticalSpacing = parseFloat(document.getElementById('verticalBars').value) / 1000; // Convert to meters
-            const horizontalLayers = parseInt(document.getElementById('horizontalBars').value);
+            const verticalSpacing = parseFloat(document.getElementById('rebarVertSpacing').value) / 1000; // Convert to meters
+            const horizontalLayers = parseInt(document.getElementById('rebarHorizSpacing').value);
             const rebarDiameter = parseInt(document.getElementById('rebarDiameter').value);
             const lapLengthVal = parseFloat(document.getElementById('lapLength').value) / 1000; // Convert to meters
             
@@ -1268,14 +1352,42 @@
             
             if (includePlaster) {
                 const plasterThickness = parseFloat(document.getElementById('plasterThickness').value) / 1000; // Convert to meters
-                const plasterVolume = netWallArea * plasterSides * plasterThickness;
                 
-                const plasterRatio = document.getElementById('plasterRatio').value;
-                const [pCementPart, pSandPart] = plasterRatio.split(':').map(Number);
-                const pTotalParts = pCementPart + pSandPart;
+                // Check if different finishes are selected
+                const differentFinishes = document.getElementById('differentFinishes').checked;
                 
-                plasterCementBags = Math.ceil(plasterVolume * (pCementPart / pTotalParts) * plasterCementFactor);
-                plasterSand = plasterVolume * (pSandPart / pTotalParts);
+                if (differentFinishes) {
+                    // Calculate different finishes for inside and outside
+                    const insideFinish = document.getElementById('insideFinish').value;
+                    const outsideFinish = document.getElementById('outsideFinish').value;
+                    
+                    // Determine thickness based on finish type
+                    const insideThickness = insideFinish === 'skim' ? 0.005 : 
+                                          (insideFinish === 'standard' ? 0.02 : 0.025);
+                    const outsideThickness = outsideFinish === 'skim' ? 0.005 : 
+                                           (outsideFinish === 'standard' ? 0.02 : 0.025);
+                    
+                    const insideVolume = netWallArea * insideThickness;
+                    const outsideVolume = netWallArea * outsideThickness;
+                    const plasterVolume = insideVolume + outsideVolume;
+                    
+                    const plasterRatio = document.getElementById('plasterRatio').value;
+                    const [pCementPart, pSandPart] = plasterRatio.split(':').map(Number);
+                    const pTotalParts = pCementPart + pSandPart;
+                    
+                    plasterCementBags = Math.ceil(plasterVolume * (pCementPart / pTotalParts) * plasterCementFactor);
+                    plasterSand = plasterVolume * (pSandPart / pTotalParts);
+                } else {
+                    // Standard calculation (same finish on both sides)
+                    const plasterVolume = netWallArea * plasterSides * plasterThickness;
+                    
+                    const plasterRatio = document.getElementById('plasterRatio').value;
+                    const [pCementPart, pSandPart] = plasterRatio.split(':').map(Number);
+                    const pTotalParts = pCementPart + pSandPart;
+                    
+                    plasterCementBags = Math.ceil(plasterVolume * (pCementPart / pTotalParts) * plasterCementFactor);
+                    plasterSand = plasterVolume * (pSandPart / pTotalParts);
+                }
             }
             
             // Calculate labor requirements with adjustment factors
@@ -1303,6 +1415,17 @@
             const helpers = parseInt(document.getElementById('helpers').value);
             const carpenters = parseInt(document.getElementById('carpenters').value);
             
+            // Calculate formwork labor if included
+            let formworkLaborDays = 0;
+            const includeFormwork = document.getElementById('includeFormwork').checked;
+            
+            if (includeFormwork) {
+                const formworkArea = parseFloat(document.getElementById('formworkArea').value);
+                // Carpenter productivity for formwork (m²/day)
+                const formworkProductivity = 15; 
+                formworkLaborDays = formworkArea / formworkProductivity;
+            }
+            
             // Calculate costs
             const chbCost = parseFloat(document.getElementById('chbCost').value);
             const cementCost = parseFloat(document.getElementById('cementCost').value);
@@ -1324,7 +1447,7 @@
             // Labor costs
             const totalMasonCost = masons * masonDailyRate * laborDays;
             const totalHelperCost = helpers * helperDailyRate * laborDays;
-            const totalCarpenterCost = carpenters * carpenterDailyRate * laborDays;
+            const totalCarpenterCost = carpenters * carpenterDailyRate * (laborDays + formworkLaborDays);
             
             const totalLaborCost = totalMasonCost + totalHelperCost + totalCarpenterCost;
             
@@ -1463,7 +1586,7 @@
             const wasteAmount = (chbTotal + cementTotal + sandTotal + rebarTotal) * data.wasteFactor;
             
             boqDiv.innerHTML = `
-                <table class="qs-table">
+                <table class="qs-table" id="boqTable">
                     <thead>
                         <tr>
                             <th>Description</th>
@@ -1515,7 +1638,7 @@
                         </tr>
                         <tr>
                             <td colspan="4" style="text-align: right; font-weight: 600;">Materials Total</td>
-                            <td>₱${(data.totalMaterialCost + wasteAmount).toFixed(2)}</td>
+                            <td id="directCost">₱${(data.totalMaterialCost + wasteAmount).toFixed(2)}</td>
                         </tr>
                         
                         <tr>
@@ -1556,15 +1679,15 @@
                         </tr>
                         <tr>
                             <td colspan="4" style="text-align: right;">Overhead</td>
-                            <td>₱${data.overheadAmount.toFixed(2)}</td>
+                            <td id="overheadCost">₱${data.overheadAmount.toFixed(2)}</td>
                         </tr>
                         <tr>
                             <td colspan="4" style="text-align: right;">Profit Margin</td>
-                            <td>₱${data.profitAmount.toFixed(2)}</td>
+                            <td id="profitCost">₱${data.profitAmount.toFixed(2)}</td>
                         </tr>
                         <tr class="total-row">
                             <td colspan="4" style="text-align: right; font-weight: bold;">TOTAL PROJECT COST</td>
-                            <td>₱${data.totalProjectCost.toFixed(2)}</td>
+                            <td id="grandTotal">₱${data.totalProjectCost.toFixed(2)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -1663,8 +1786,8 @@
             }
             
             // Draw reinforcement if visible
-            const verticalSpacing = parseFloat(document.getElementById('verticalBars').value) / 1000;
-            const horizontalLayers = parseInt(document.getElementById('horizontalBars').value);
+            const verticalSpacing = parseFloat(document.getElementById('rebarVertSpacing').value) / 1000;
+            const horizontalLayers = parseInt(document.getElementById('rebarHorizSpacing').value);
             
             ctx.strokeStyle = 'red';
             ctx.lineWidth = 2;
@@ -1743,55 +1866,100 @@
             ctx.stroke();
         }
         
-        function exportPDF() {
-            const doc = new jsPDF();
-            
-            // Add title
-            doc.setFontSize(20);
-            doc.text('CHB Wall Estimation Report', 105, 15, { align: 'center' });
-            
-            // Add project details
-            doc.setFontSize(12);
-            doc.text(`Wall Dimensions: ${document.getElementById('wallLength').value}m x ${document.getElementById('wallHeight').value}m`, 15, 25);
-            
-            const netWallArea = document.querySelector('#netWallArea')?.textContent || 'N/A';
-            doc.text(`Net Wall Area: ${netWallArea}`, 15, 32);
-            
-            // Add BOQ table
-            doc.setFontSize(14);
-            doc.text('Bill of Quantities', 15, 45);
-            
-            // Get table data
-            const table = document.querySelector('.qs-table');
-            const rows = [];
-            
-            table.querySelectorAll('tr').forEach(row => {
-                const rowData = [];
-                row.querySelectorAll('th, td').forEach(cell => {
-                    rowData.push(cell.textContent.replace('₱', ''));
+        function downloadPDF() {
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF("p", "mm", "a4");
+
+                // Title Page
+                doc.setFontSize(18);
+                doc.text("CHB Wall Construction Estimate", 105, 20, { align: "center" });
+
+                doc.setFontSize(12);
+                doc.text(`Project: ${document.getElementById("projectName")?.value || "N/A"}`, 20, 40);
+                doc.text(`Client: ${document.getElementById("clientName")?.value || "N/A"}`, 20, 48);
+                doc.text(`Location: ${document.getElementById("projectLocation")?.value || "N/A"}`, 20, 56);
+                doc.text(`Prepared by: ${document.getElementById("preparedBy")?.value || "Estimator"}`, 20, 64);
+                doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 72);
+
+                doc.addPage();
+
+                // Assumptions Section
+                doc.setFontSize(14);
+                doc.text("Assumptions & Notes", 14, 20);
+                doc.setFontSize(10);
+                let assumptions = [
+                    "• Material consumption based on CHB size and mortar/plaster mix ratios.",
+                    "• Reinforcement: vertical @ " + document.getElementById("rebarVertSpacing").value + "mm, horizontal @ " + document.getElementById("rebarHorizSpacing").value + "mm.",
+                    "• Plastering applied on both sides unless noted otherwise.",
+                    "• Productivity rate adjusted by complexity, scaffolding, openings, and crew skill.",
+                    "• Waste allowance, overhead, and profit included as per user inputs.",
+                    "• Estimates are conceptual and for preliminary costing purposes only."
+                ];
+                doc.text(assumptions, 20, 30);
+
+                doc.addPage();
+
+                // BOQ Table
+                doc.setFontSize(14);
+                doc.text("Bill of Quantities", 14, 20);
+
+                const boqTable = [];
+                document.querySelectorAll("#boqTable tbody tr").forEach((row, idx) => {
+                    const cols = row.querySelectorAll("td");
+                    if (cols.length >= 5) {
+                        boqTable.push([
+                            idx + 1,
+                            cols[0].textContent.trim(),  // Description
+                            cols[1].textContent.trim(),  // Unit
+                            cols[2].textContent.trim(),  // Qty
+                            cols[3].textContent.trim(),  // Unit Rate
+                            cols[4].textContent.trim()   // Amount
+                        ]);
+                    }
                 });
-                rows.push(rowData);
-            });
-            
-            // Create PDF table
-            doc.autoTable({
-                startY: 50,
-                head: [rows[0]],
-                body: rows.slice(1),
-                theme: 'grid',
-                headStyles: { fillColor: [52, 152, 219] },
-                styles: { fontSize: 10 },
-                columnStyles: {
-                    0: { cellWidth: 60 },
-                    1: { cellWidth: 25 },
-                    2: { cellWidth: 20 },
-                    3: { cellWidth: 30 },
-                    4: { cellWidth: 30 }
+
+                doc.autoTable({
+                    head: [["Item", "Description", "Unit", "Qty", "Unit Rate", "Amount"]],
+                    body: boqTable,
+                    startY: 28,
+                    styles: { fontSize: 9 },
+                    theme: "grid"
+                });
+
+                // Cost Summary
+                let finalY = doc.lastAutoTable.finalY + 10;
+                doc.setFontSize(12);
+                doc.text("Summary of Costs", 14, finalY);
+                doc.setFontSize(10);
+                doc.text("Direct Cost: ₱" + document.getElementById("directCost").textContent, 20, finalY + 10);
+                doc.text("Overhead: ₱" + document.getElementById("overheadCost").textContent, 20, finalY + 16);
+                doc.text("Profit: ₱" + document.getElementById("profitCost").textContent, 20, finalY + 22);
+                doc.text("Grand Total: ₱" + document.getElementById("grandTotal").textContent, 20, finalY + 32);
+
+                doc.addPage();
+
+                // Visualization
+                doc.setFontSize(14);
+                doc.text("Wall Visualization", 14, 20);
+
+                const canvas = document.getElementById("wallCanvas");
+                if (canvas) {
+                    const imgData = canvas.toDataURL("image/png", 1.0);
+                    doc.addImage(imgData, "PNG", 20, 30, 160, 100);
+                } else {
+                    doc.setFontSize(10);
+                    doc.text("Visualization not available.", 20, 30);
                 }
-            });
-            
-            // Save the PDF
-            doc.save('chb-wall-estimation.pdf');
+
+                // Footer
+                doc.setFontSize(8);
+                doc.text("Generated by CHB Wall Calculator", 105, 290, { align: "center" });
+
+                doc.save("CHB_Wall_Estimate.pdf");
+            } catch (error) {
+                alert("Error generating PDF: " + error.message);
+            }
         }
         
         function exportExcel() {
@@ -1808,6 +1976,12 @@
             // Add summary data
             const summaryData = [
                 ["CHB Wall Estimation Summary"],
+                [],
+                ["Project", document.getElementById("projectName")?.value || "N/A"],
+                ["Client", document.getElementById("clientName")?.value || "N/A"],
+                ["Location", document.getElementById("projectLocation")?.value || "N/A"],
+                ["Prepared by", document.getElementById("preparedBy")?.value || "Estimator"],
+                ["Date", new Date().toLocaleDateString()],
                 [],
                 ["Wall Dimensions", `${document.getElementById('wallLength').value}m x ${document.getElementById('wallHeight').value}m`],
                 ["Net Wall Area", document.querySelector('#netWallArea')?.textContent || 'N/A'],
