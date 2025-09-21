@@ -1869,28 +1869,25 @@ function downloadPDF() {
         const doc = new jsPDF("p", "mm", "a4");
 
         // =========================
-        // COVER PAGE
+        // HEADER WITH PROJECT INFO
         // =========================
-        doc.setFontSize(18).setFont(undefined, "bold");
-        doc.text("CHB Wall Construction Estimate", 105, 30, { align: "center" });
+        doc.setFontSize(16).setFont(undefined, "bold");
+        doc.text("CHB Wall Construction Estimate", 105, 20, { align: "center" });
 
-        doc.setFontSize(12).setFont(undefined, "normal");
-        doc.text(`Project: ${safeVal("projectName")}`, 20, 60);
-        doc.text(`Client: ${safeVal("clientName")}`, 20, 68);
-        doc.text(`Location: ${safeVal("projectLocation")}`, 20, 76);
-        doc.text(`Company: ${safeVal("companyName")}`, 20, 84);
-        doc.text(`Prepared By: ${safeVal("preparedBy")}`, 20, 92);
-        doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 100);
-
-        doc.addPage();
+        doc.setFontSize(10).setFont(undefined, "normal");
+        doc.text(`Project: ${safeVal("projectName")}`, 14, 30);
+        doc.text(`Client: ${safeVal("clientName")}`, 14, 36);
+        doc.text(`Location: ${safeVal("projectLocation")}`, 14, 42);
+        doc.text(`Prepared By: ${safeVal("preparedBy")}`, 14, 48);
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 54);
 
         // =========================
         // ASSUMPTIONS SECTION
         // =========================
-        doc.setFontSize(14).setFont(undefined, "bold");
-        doc.text("Assumptions & Notes", 14, 20);
+        doc.setFontSize(12).setFont(undefined, "bold");
+        doc.text("Assumptions & Notes", 14, 65);
 
-        doc.setFontSize(10).setFont(undefined, "normal");
+        doc.setFontSize(9).setFont(undefined, "normal");
         const assumptions = [
             "• Mortar mix ratio: " + safeVal("mortarMix"),
             "• Plaster mix ratio: " + safeVal("plasterMix"),
@@ -1901,20 +1898,13 @@ function downloadPDF() {
             "• Rebar diameter: " + safeVal("rebarDiameter") + " mm",
             "• Lap length as per: " + safeVal("designStandard"),
             "• Productivity: " + safeVal("productivityRate") + " m²/day",
-            "• Waste allowance: " + safeVal("wasteFactor") + "%",
-            "• Overhead: " + safeVal("overhead") + "%",
-            "• Profit margin: " + safeVal("profitMargin") + "%"
+            "• Waste: " + safeVal("wasteFactor") + "% | Overhead: " + safeVal("overhead") + "% | Profit: " + safeVal("profitMargin") + "%"
         ];
-        doc.text(assumptions, 20, 30);
-
-        doc.addPage();
+        doc.text(assumptions, 14, 72);
 
         // =========================
-        // BILL OF QUANTITIES (MATERIALS + LABOR)
+        // BILL OF QUANTITIES
         // =========================
-        doc.setFontSize(14).setFont(undefined, "bold");
-        doc.text("Bill of Quantities", 14, 20);
-
         const boqTable = [];
         document.querySelectorAll("#boqMaterials tbody tr").forEach((row, idx) => {
             const cols = row.querySelectorAll("td");
@@ -1933,14 +1923,15 @@ function downloadPDF() {
         doc.autoTable({
             head: [["Item", "Description", "Qty", "Unit", "Unit Cost", "Amount"]],
             body: boqTable,
-            startY: 30,
+            startY: 95,
             theme: "grid",
-            styles: { fontSize: 9 }
+            styles: { fontSize: 8 }
         });
 
-        // Labor Table
-        let finalY = doc.lastAutoTable.finalY + 15;
-        doc.setFontSize(12);
+        // Labor + Summary under BOQ (on same page)
+        let finalY = doc.lastAutoTable.finalY + 10;
+
+        doc.setFontSize(11).setFont(undefined, "bold");
         doc.text("Labor Requirements", 14, finalY);
 
         const laborTable = [];
@@ -1959,16 +1950,14 @@ function downloadPDF() {
         doc.autoTable({
             head: [["Description", "Qty", "Unit", "Cost"]],
             body: laborTable,
-            startY: finalY + 5,
+            startY: finalY + 4,
             theme: "grid",
-            styles: { fontSize: 9 }
+            styles: { fontSize: 8 }
         });
 
-        // =========================
-        // SUMMARY TABLE
-        // =========================
-        finalY = doc.lastAutoTable.finalY + 15;
-        doc.setFontSize(12);
+        finalY = doc.lastAutoTable.finalY + 10;
+
+        doc.setFontSize(11).setFont(undefined, "bold");
         doc.text("Summary of Costs", 14, finalY);
 
         const summaryTable = [];
@@ -1985,31 +1974,40 @@ function downloadPDF() {
         doc.autoTable({
             head: [["Description", "Amount"]],
             body: summaryTable,
-            startY: finalY + 5,
+            startY: finalY + 4,
             theme: "grid",
-            styles: { fontSize: 9 }
+            styles: { fontSize: 8 }
         });
 
-        doc.addPage();
+        // =========================
+        // VISUALIZATION (only if space runs out → new page)
+        // =========================
+        let vizY = doc.lastAutoTable.finalY + 20;
+        if (vizY > 220) { // too close to page bottom
+            doc.addPage();
+            vizY = 30;
+        }
 
-        // =========================
-        // VISUALIZATION (Canvas)
-        // =========================
-        doc.setFontSize(14);
-        doc.text("Wall Visualization", 14, 20);
+        doc.setFontSize(12).setFont(undefined, "bold");
+        doc.text("Wall Visualization", 14, vizY);
 
         const canvas = document.getElementById("wallCanvas");
         if (canvas) {
             const imgData = canvas.toDataURL("image/png", 1.0);
-            doc.addImage(imgData, "PNG", 20, 30, 160, 100);
+            doc.addImage(imgData, "PNG", 20, vizY + 6, 160, 90);
         } else {
-            doc.setFontSize(10);
-            doc.text("Visualization not available.", 20, 30);
+            doc.setFontSize(9);
+            doc.text("Visualization not available.", 14, vizY + 6);
         }
 
-        // Footer
-        doc.setFontSize(8);
-        doc.text("Generated by CHB Wall Calculator", 105, 290, { align: "center" });
+        // Footer with page numbers
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.text(`Page ${i} of ${pageCount}`, 200, 290, { align: "right" });
+            doc.text("Generated by CHB Wall Calculator", 14, 290);
+        }
 
         doc.save("CHB_Wall_Estimate.pdf");
 
