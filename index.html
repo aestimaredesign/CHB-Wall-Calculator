@@ -1856,7 +1856,14 @@
             }
         }
         
-        function downloadPDF() {
+        function safeVal(id, fallback = "N/A") {
+    const el = document.getElementById(id);
+    if (!el) return fallback;
+    // Handles both input.value and span/div.innerText
+    return (el.value !== undefined && el.value !== "") ? el.value : (el.textContent || fallback);
+}
+
+function downloadPDF() {
     try {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF("p", "mm", "a4");
@@ -1864,17 +1871,15 @@
         // =========================
         // COVER PAGE
         // =========================
-        doc.setFontSize(18);
-        doc.setFont(undefined, "bold");
+        doc.setFontSize(18).setFont(undefined, "bold");
         doc.text("CHB Wall Construction Estimate", 105, 30, { align: "center" });
 
-        doc.setFontSize(12);
-        doc.setFont(undefined, "normal");
-        doc.text(`Project: ${document.getElementById("projectName").value}`, 20, 60);
-        doc.text(`Client: ${document.getElementById("clientName").value}`, 20, 68);
-        doc.text(`Location: ${document.getElementById("projectLocation").value}`, 20, 76);
-        doc.text(`Company: ${document.getElementById("companyName").value}`, 20, 84);
-        doc.text(`Prepared By: ${document.getElementById("preparedBy").value}`, 20, 92);
+        doc.setFontSize(12).setFont(undefined, "normal");
+        doc.text(`Project: ${safeVal("projectName")}`, 20, 60);
+        doc.text(`Client: ${safeVal("clientName")}`, 20, 68);
+        doc.text(`Location: ${safeVal("projectLocation")}`, 20, 76);
+        doc.text(`Company: ${safeVal("companyName")}`, 20, 84);
+        doc.text(`Prepared By: ${safeVal("preparedBy")}`, 20, 92);
         doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 100);
 
         doc.addPage();
@@ -1882,25 +1887,23 @@
         // =========================
         // ASSUMPTIONS SECTION
         // =========================
-        doc.setFontSize(14);
-        doc.setFont(undefined, "bold");
+        doc.setFontSize(14).setFont(undefined, "bold");
         doc.text("Assumptions & Notes", 14, 20);
 
-        doc.setFontSize(10);
-        doc.setFont(undefined, "normal");
+        doc.setFontSize(10).setFont(undefined, "normal");
         const assumptions = [
-            "• Mortar mix ratio: " + document.getElementById("mortarMix").value,
-            "• Plaster mix ratio: " + document.getElementById("plasterMix").value,
-            "• Plaster thickness: " + document.getElementById("plasterThickness").value + " mm",
-            "• Plastering applied: " + document.getElementById("plasterSides").value,
-            "• Reinforcement: Vertical @ " + document.getElementById("rebarVertSpacing").value + " mm, " +
-              "Horizontal @ " + document.getElementById("rebarHorizSpacing").value + " courses",
-            "• Rebar diameter: " + document.getElementById("rebarDiameter").value + " mm",
-            "• Lap length as per: " + document.getElementById("designStandard").value,
-            "• Productivity: " + document.getElementById("productivityRate").value + " m²/day",
-            "• Waste allowance: " + document.getElementById("wasteFactor").value + "%",
-            "• Overhead: " + document.getElementById("overhead").value + "%",
-            "• Profit margin: " + document.getElementById("profitMargin").value + "%"
+            "• Mortar mix ratio: " + safeVal("mortarMix"),
+            "• Plaster mix ratio: " + safeVal("plasterMix"),
+            "• Plaster thickness: " + safeVal("plasterThickness") + " mm",
+            "• Plastering applied: " + safeVal("plasterSides"),
+            "• Reinforcement: Vertical @ " + safeVal("rebarVertSpacing") + " mm, " +
+              "Horizontal @ " + safeVal("rebarHorizSpacing") + " courses",
+            "• Rebar diameter: " + safeVal("rebarDiameter") + " mm",
+            "• Lap length as per: " + safeVal("designStandard"),
+            "• Productivity: " + safeVal("productivityRate") + " m²/day",
+            "• Waste allowance: " + safeVal("wasteFactor") + "%",
+            "• Overhead: " + safeVal("overhead") + "%",
+            "• Profit margin: " + safeVal("profitMargin") + "%"
         ];
         doc.text(assumptions, 20, 30);
 
@@ -1909,22 +1912,22 @@
         // =========================
         // BILL OF QUANTITIES (MATERIALS + LABOR)
         // =========================
-        doc.setFontSize(14);
-        doc.setFont(undefined, "bold");
+        doc.setFontSize(14).setFont(undefined, "bold");
         doc.text("Bill of Quantities", 14, 20);
 
-        // Materials Table
         const boqTable = [];
         document.querySelectorAll("#boqMaterials tbody tr").forEach((row, idx) => {
             const cols = row.querySelectorAll("td");
-            boqTable.push([
-                idx + 1,
-                cols[0].textContent.trim(), // Description
-                cols[1].textContent.trim(), // Qty
-                cols[2].textContent.trim(), // Unit
-                cols[3].textContent.trim(), // Unit Cost
-                cols[4].textContent.trim()  // Amount
-            ]);
+            if (cols.length >= 5) {
+                boqTable.push([
+                    idx + 1,
+                    cols[0].textContent.trim(),
+                    cols[1].textContent.trim(),
+                    cols[2].textContent.trim(),
+                    cols[3].textContent.trim(),
+                    cols[4].textContent.trim()
+                ]);
+            }
         });
 
         doc.autoTable({
@@ -1935,7 +1938,7 @@
             styles: { fontSize: 9 }
         });
 
-        // Add Labor Table
+        // Labor Table
         let finalY = doc.lastAutoTable.finalY + 15;
         doc.setFontSize(12);
         doc.text("Labor Requirements", 14, finalY);
@@ -1943,12 +1946,14 @@
         const laborTable = [];
         document.querySelectorAll("#boqLabor tbody tr").forEach((row) => {
             const cols = row.querySelectorAll("td");
-            laborTable.push([
-                cols[0].textContent.trim(),
-                cols[1].textContent.trim(),
-                cols[2].textContent.trim(),
-                cols[3].textContent.trim()
-            ]);
+            if (cols.length >= 4) {
+                laborTable.push([
+                    cols[0].textContent.trim(),
+                    cols[1].textContent.trim(),
+                    cols[2].textContent.trim(),
+                    cols[3].textContent.trim()
+                ]);
+            }
         });
 
         doc.autoTable({
@@ -1969,10 +1974,12 @@
         const summaryTable = [];
         document.querySelectorAll("#boqSummary tbody tr").forEach((row) => {
             const cols = row.querySelectorAll("td");
-            summaryTable.push([
-                cols[0].textContent.trim(),
-                cols[1].textContent.trim()
-            ]);
+            if (cols.length >= 2) {
+                summaryTable.push([
+                    cols[0].textContent.trim(),
+                    cols[1].textContent.trim()
+                ]);
+            }
         });
 
         doc.autoTable({
