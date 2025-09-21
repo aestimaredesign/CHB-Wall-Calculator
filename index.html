@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHB Wall Estimation Calculator</title>
+    <title>Professional CHB Wall Estimation Calculator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
             --primary: #2c3e50;
@@ -364,12 +366,115 @@
             gap: 10px;
             margin-top: 20px;
         }
+        
+        .input-error {
+            border-color: var(--danger);
+            box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+        }
+        
+        .error-text {
+            color: var(--danger);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .visualization-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .visualization-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+        }
+        
+        .help-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--light);
+            border-radius: 4px;
+        }
+        
+        .help-section details {
+            margin-bottom: 10px;
+        }
+        
+        .help-section summary {
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .help-section p {
+            margin-top: 10px;
+        }
+        
+        .qs-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .qs-table th, .qs-table td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .qs-table th:first-child, .qs-table td:first-child {
+            text-align: left;
+        }
+        
+        .qs-table th {
+            background-color: var(--light);
+        }
+        
+        .qs-table .total-row {
+            font-weight: bold;
+            border-top: 2px solid var(--dark);
+        }
+        
+        .productivity-library {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        
+        .productivity-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .rebar-options {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>CHB Wall Estimation Calculator</h1>
+            <h1>Professional CHB Wall Estimation Calculator</h1>
             <p>Compliant with NSCP, ACI, ASTM, and Eurocode standards</p>
         </header>
         
@@ -380,6 +485,7 @@
                     <div class="tab" data-tab="materials">Materials</div>
                     <div class="tab" data-tab="labor">Labor & Costs</div>
                     <div class="tab" data-tab="factors">Adjustment Factors</div>
+                    <div class="tab" data-tab="help">Help</div>
                 </div>
                 
                 <form id="calculatorForm">
@@ -387,11 +493,13 @@
                         <div class="form-group">
                             <label for="wallLength">Wall Length (m)</label>
                             <input type="number" id="wallLength" step="0.01" min="0.1" value="10" required>
+                            <div class="error-text" id="wallLengthError"></div>
                         </div>
                         
                         <div class="form-group">
                             <label for="wallHeight">Wall Height (m)</label>
                             <input type="number" id="wallHeight" step="0.01" min="0.1" value="3" required>
+                            <div class="error-text" id="wallHeightError"></div>
                         </div>
                         
                         <div class="form-group">
@@ -408,31 +516,37 @@
                         <div class="form-group">
                             <label for="doorCount">Number of Doors</label>
                             <input type="number" id="doorCount" min="0" value="1">
+                            <div class="error-text" id="doorCountError"></div>
                         </div>
                         
                         <div class="form-group">
                             <label for="doorWidth">Average Door Width (m)</label>
                             <input type="number" id="doorWidth" step="0.01" min="0.5" value="0.9">
+                            <div class="error-text" id="doorWidthError"></div>
                         </div>
                         
                         <div class="form-group">
                             <label for="doorHeight">Average Door Height (m)</label>
                             <input type="number" id="doorHeight" step="0.01" min="1.5" value="2.1">
+                            <div class="error-text" id="doorHeightError"></div>
                         </div>
                         
                         <div class="form-group">
                             <label for="windowCount">Number of Windows</label>
                             <input type="number" id="windowCount" min="0" value="2">
+                            <div class="error-text" id="windowCountError"></div>
                         </div>
                         
                         <div class="form-group">
                             <label for="windowWidth">Average Window Width (m)</label>
                             <input type="number" id="windowWidth" step="0.01" min="0.3" value="1.2">
+                            <div class="error-text" id="windowWidthError"></div>
                         </div>
                         
                         <div class="form-group">
                             <label for="windowHeight">Average Window Height (m)</label>
                             <input type="number" id="windowHeight" step="0.01" min="0.3" value="1.2">
+                            <div class="error-text" id="windowHeightError"></div>
                         </div>
                     </div>
                     
@@ -451,39 +565,56 @@
                         
                         <h3>Reinforcement</h3>
                         
-                        <div class="form-group">
-                            <label for="verticalBars">Vertical Bar Spacing (mm) <span class="tooltip">ℹ️
-                                <span class="tooltiptext">Distance between vertical reinforcing bars</span>
-                            </span></label>
-                            <input type="number" id="verticalBars" value="800" min="400" step="100">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="horizontalBars">Horizontal Bar Layers <span class="tooltip">ℹ️
-                                <span class="tooltiptext">Number of CHB courses between horizontal bars (typically every 3rd course)</span>
-                            </span></label>
-                            <input type="number" id="horizontalBars" value="3" min="1" step="1">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="rebarDiameter">Rebar Diameter (mm)</label>
-                            <select id="rebarDiameter">
-                                <option value="10">10mm</option>
-                                <option value="12" selected>12mm</option>
-                                <option value="16">16mm</option>
-                            </select>
-                        </div>
-                        
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="includeLaps" checked>
-                            <label for="includeLaps">Include lap splices and hooks</label>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="lapLength">Lap Length (mm) <span class="tooltip">ℹ️
-                                <span class="tooltiptext">Based on rebar diameter and code requirements</span>
-                            </span></label>
-                            <input type="number" id="lapLength" value="480" min="300" step="10" readonly>
+                        <div class="rebar-options">
+                            <div class="form-group">
+                                <label for="verticalBars">Vertical Bar Spacing (mm) <span class="tooltip">ℹ️
+                                    <span class="tooltiptext">Distance between vertical reinforcing bars</span>
+                                </span></label>
+                                <input type="number" id="verticalBars" value="800" min="400" step="100">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="horizontalBars">Horizontal Bar Layers <span class="tooltip">ℹ️
+                                    <span class="tooltiptext">Number of CHB courses between horizontal bars (typically every 3rd course)</span>
+                                </span></label>
+                                <input type="number" id="horizontalBars" value="3" min="1" step="1">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="rebarDiameter">Rebar Diameter (mm)</label>
+                                <select id="rebarDiameter">
+                                    <option value="10">10mm</option>
+                                    <option value="12" selected>12mm</option>
+                                    <option value="16">16mm</option>
+                                </select>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="includeLaps" checked>
+                                <label for="includeLaps">Include lap splices and hooks</label>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="lapLength">Lap Length (mm) <span class="tooltip">ℹ️
+                                    <span class="tooltiptext">Based on rebar diameter and code requirements</span>
+                                </span></label>
+                                <input type="number" id="lapLength" value="480" min="300" step="10">
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="cornerBars">
+                                <label for="cornerBars">Include corner bars</label>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="lintelBars">
+                                <label for="lintelBars">Include lintel reinforcement</label>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="dowelBars">
+                                <label for="dowelBars">Include dowel bars</label>
+                            </div>
                         </div>
                         
                         <h3>Mortar & Plaster</h3>
@@ -498,6 +629,13 @@
                                 <option value="1:5">1:5 (Economy)</option>
                                 <option value="1:6">1:6 (Lean mix)</option>
                             </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="cementFactor">Cement Factor (bags/m³) <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Varies by standard and mix ratio</span>
+                            </span></label>
+                            <input type="number" id="cementFactor" step="0.1" min="7" max="12" value="9">
                         </div>
                         
                         <div class="checkbox-group">
@@ -525,6 +663,13 @@
                         </div>
                         
                         <div class="form-group">
+                            <label for="plasterCementFactor">Plaster Cement Factor (bags/m³) <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Varies by standard and mix ratio</span>
+                            </span></label>
+                            <input type="number" id="plasterCementFactor" step="0.1" min="10" max="16" value="12">
+                        </div>
+                        
+                        <div class="form-group">
                             <label for="plasterThickness">Plaster Thickness (mm) <span class="tooltip">ℹ️
                                 <span class="tooltiptext">Thickness of plaster on each side</span>
                             </span></label>
@@ -549,6 +694,34 @@
                         <div class="form-group" id="customRateContainer" style="display: none;">
                             <label for="customRate">Custom Rate (m²/day)</label>
                             <input type="number" id="customRate" min="4" max="15" step="0.5" value="8">
+                        </div>
+                        
+                        <div class="productivity-library">
+                            <h4>Productivity Adjustment Factors</h4>
+                            <div class="productivity-item">
+                                <span>Wall Complexity:</span>
+                                <select id="complexityFactor">
+                                    <option value="1.0">Simple (straight walls)</option>
+                                    <option value="0.9" selected>Moderate (some corners)</option>
+                                    <option value="0.8">Complex (many corners/angles)</option>
+                                </select>
+                            </div>
+                            <div class="productivity-item">
+                                <span>Scaffolding Required:</span>
+                                <select id="scaffoldingFactor">
+                                    <option value="1.0">None (low height)</option>
+                                    <option value="0.95" selected>Moderate (medium height)</option>
+                                    <option value="0.9">Extensive (high walls)</option>
+                                </select>
+                            </div>
+                            <div class="productivity-item">
+                                <span>Opening Complexity:</span>
+                                <select id="openingFactor">
+                                    <option value="1.0">Few openings</option>
+                                    <option value="0.95" selected>Moderate openings</option>
+                                    <option value="0.9">Many openings</option>
+                                </select>
+                            </div>
                         </div>
                         
                         <h3>Crew Composition</h3>
@@ -668,6 +841,35 @@
                         </div>
                     </div>
                     
+                    <div class="tab-content" id="help-tab">
+                        <div class="help-section">
+                            <details>
+                                <summary>Wall Dimensions</summary>
+                                <p>Enter the length and height of your wall in meters. The calculator will automatically subtract door and window openings to determine the net wall area.</p>
+                            </details>
+                            
+                            <details>
+                                <summary>Material Calculations</summary>
+                                <p>The calculator uses standard CHB dimensions (0.4m x 0.2m) and accounts for mortar joints. Reinforcement calculations follow the selected building code standard.</p>
+                            </details>
+                            
+                            <details>
+                                <summary>Labor Productivity</summary>
+                                <p>Productivity rates are based on industry standards and can be adjusted for project complexity, crew skill, weather conditions, and site access.</p>
+                            </details>
+                            
+                            <details>
+                                <summary>Cost Calculations</summary>
+                                <p>Costs include materials, labor, waste factor, overhead, and profit margin. You can customize all cost inputs to match your local market rates.</p>
+                            </details>
+                            
+                            <details>
+                                <summary>Export Options</summary>
+                                <p>You can export the Bill of Quantities and cost breakdown as PDF or Excel files for professional reporting and documentation.</p>
+                            </details>
+                        </div>
+                    </div>
+                    
                     <button type="button" id="calculateBtn" class="btn btn-block">Calculate Estimate</button>
                 </form>
             </div>
@@ -683,8 +885,27 @@
         <div class="right-column">
             <div class="card">
                 <h2>Wall Visualization</h2>
+                <div class="visualization-controls">
+                    <button class="btn" id="zoomIn">Zoom In</button>
+                    <button class="btn" id="zoomOut">Zoom Out</button>
+                    <button class="btn" id="resetView">Reset View</button>
+                </div>
                 <div class="visualization">
                     <canvas id="wallCanvas" width="600" height="400"></canvas>
+                </div>
+                <div class="visualization-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #f9f9f9;"></div>
+                        <span>CHB Blocks</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: rgba(200, 200, 255, 0.5);"></div>
+                        <span>Openings</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: red;"></div>
+                        <span>Rebar</span>
+                    </div>
                 </div>
             </div>
             
@@ -692,13 +913,6 @@
                 <h2>Bill of Quantities</h2>
                 <div id="boq">
                     <p class="alert alert-warning">Calculation required to generate BOQ</p>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h2>Cost Breakdown</h2>
-                <div id="costBreakdown">
-                    <p class="alert alert-warning">Calculation required to show cost breakdown</p>
                 </div>
                 <div class="export-buttons">
                     <button class="btn" id="exportPDF">Export PDF</button>
@@ -709,6 +923,9 @@
     </div>
 
     <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Tab functionality
             const tabs = document.querySelectorAll('.tab');
@@ -742,15 +959,67 @@
                 }
             });
             
-            // Update lap length based on rebar diameter
+            // Update lap length based on rebar diameter and standard
             const rebarDiameter = document.getElementById('rebarDiameter');
             const lapLength = document.getElementById('lapLength');
+            const standard = document.getElementById('standard');
             
-            rebarDiameter.addEventListener('change', function() {
-                const diameter = parseInt(this.value);
-                // NSCP requires 40d lap length for rebars
-                lapLength.value = diameter * 40;
-            });
+            function updateLapLength() {
+                const diameter = parseInt(rebarDiameter.value);
+                const selectedStandard = standard.value;
+                
+                // Different lap length requirements based on standards
+                let lapMultiplier = 40; // Default to NSCP 40d
+                
+                if (selectedStandard === 'aci') lapMultiplier = 42; // ACI typically 42d
+                if (selectedStandard === 'eurocode') lapMultiplier = 45; // Eurocode typically 45d
+                if (selectedStandard === 'astm') lapMultiplier = 40; // ASTM similar to NSCP
+                
+                lapLength.value = diameter * lapMultiplier;
+            }
+            
+            rebarDiameter.addEventListener('change', updateLapLength);
+            standard.addEventListener('change', updateLapLength);
+            
+            // Update cement factors based on standard and mix ratio
+            const mortarRatio = document.getElementById('mortarRatio');
+            const cementFactor = document.getElementById('cementFactor');
+            const plasterRatio = document.getElementById('plasterRatio');
+            const plasterCementFactor = document.getElementById('plasterCementFactor');
+            
+            function updateCementFactors() {
+                const selectedStandard = standard.value;
+                const mortarMix = mortarRatio.value;
+                const plasterMix = plasterRatio.value;
+                
+                // Set cement factors based on standard and mix ratio
+                let mortarCementValue = 9; // Default for 1:4 mix
+                let plasterCementValue = 12; // Default for 1:3 plaster
+                
+                // Adjust based on mix ratio
+                if (mortarMix === '1:3') mortarCementValue = 10.5;
+                if (mortarMix === '1:5') mortarCementValue = 8;
+                if (mortarMix === '1:6') mortarCementValue = 7;
+                
+                if (plasterMix === '1:2') plasterCementValue = 14;
+                if (plasterMix === '1:4') plasterCementValue = 10;
+                
+                // Adjust based on standard
+                if (selectedStandard === 'aci') {
+                    mortarCementValue *= 1.05; // ACI typically requires slightly more cement
+                    plasterCementValue *= 1.05;
+                } else if (selectedStandard === 'eurocode') {
+                    mortarCementValue *= 0.95; // Eurocode may allow slightly less cement
+                    plasterCementValue *= 0.95;
+                }
+                
+                cementFactor.value = mortarCementValue.toFixed(1);
+                plasterCementFactor.value = plasterCementValue.toFixed(1);
+            }
+            
+            mortarRatio.addEventListener('change', updateCementFactors);
+            plasterRatio.addEventListener('change', updateCementFactors);
+            standard.addEventListener('change', updateCementFactors);
             
             // Setup adjustment factor sliders
             setupSlider('wasteFactorSlider', 'wasteFactorValue', 'wasteFactor', '%');
@@ -772,20 +1041,130 @@
             }
             
             // Calculate button event
-            document.getElementById('calculateBtn').addEventListener('click', calculateEstimate);
+            document.getElementById('calculateBtn').addEventListener('click', function() {
+                if (validateForm()) {
+                    calculateEstimate();
+                }
+            });
             
             // Export buttons
-            document.getElementById('exportPDF').addEventListener('click', function() {
-                alert('PDF export functionality would be implemented here');
+            document.getElementById('exportPDF').addEventListener('click', exportPDF);
+            document.getElementById('exportExcel').addEventListener('click', exportExcel);
+            
+            // Visualization controls
+            document.getElementById('zoomIn').addEventListener('click', function() {
+                zoomLevel *= 1.2;
+                drawWallVisualization();
             });
             
-            document.getElementById('exportExcel').addEventListener('click', function() {
-                alert('Excel export functionality would be implemented here');
+            document.getElementById('zoomOut').addEventListener('click', function() {
+                zoomLevel /= 1.2;
+                drawWallVisualization();
             });
+            
+            document.getElementById('resetView').addEventListener('click', function() {
+                zoomLevel = 1;
+                drawWallVisualization();
+            });
+            
+            // Input validation on change
+            const inputsToValidate = [
+                'wallLength', 'wallHeight', 'doorCount', 'doorWidth', 'doorHeight', 
+                'windowCount', 'windowWidth', 'windowHeight'
+            ];
+            
+            inputsToValidate.forEach(id => {
+                document.getElementById(id).addEventListener('input', function() {
+                    validateField(this.id);
+                });
+            });
+            
+            // Initial updates
+            updateLapLength();
+            updateCementFactors();
             
             // Initial visualization
+            let zoomLevel = 1;
             drawWallVisualization();
         });
+        
+        function validateForm() {
+            let isValid = true;
+            
+            // Validate all fields
+            isValid &= validateField('wallLength');
+            isValid &= validateField('wallHeight');
+            isValid &= validateField('doorCount');
+            isValid &= validateField('doorWidth');
+            isValid &= validateField('doorHeight');
+            isValid &= validateField('windowCount');
+            isValid &= validateField('windowWidth');
+            isValid &= validateField('windowHeight');
+            
+            // Check if openings exceed wall area
+            const wallLength = parseFloat(document.getElementById('wallLength').value);
+            const wallHeight = parseFloat(document.getElementById('wallHeight').value);
+            const doorWidth = parseFloat(document.getElementById('doorWidth').value);
+            const doorHeight = parseFloat(document.getElementById('doorHeight').value);
+            const windowWidth = parseFloat(document.getElementById('windowWidth').value);
+            const windowHeight = parseFloat(document.getElementById('windowHeight').value);
+            
+            if (doorWidth > wallLength) {
+                document.getElementById('doorWidthError').textContent = 'Door width exceeds wall length';
+                document.getElementById('doorWidth').classList.add('input-error');
+                isValid = false;
+            }
+            
+            if (doorHeight > wallHeight) {
+                document.getElementById('doorHeightError').textContent = 'Door height exceeds wall height';
+                document.getElementById('doorHeight').classList.add('input-error');
+                isValid = false;
+            }
+            
+            if (windowWidth > wallLength) {
+                document.getElementById('windowWidthError').textContent = 'Window width exceeds wall length';
+                document.getElementById('windowWidth').classList.add('input-error');
+                isValid = false;
+            }
+            
+            if (windowHeight > wallHeight) {
+                document.getElementById('windowHeightError').textContent = 'Window height exceeds wall height';
+                document.getElementById('windowHeight').classList.add('input-error');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        function validateField(fieldId) {
+            const field = document.getElementById(fieldId);
+            const errorElement = document.getElementById(fieldId + 'Error');
+            let isValid = true;
+            let errorMessage = '';
+            
+            field.classList.remove('input-error');
+            
+            if (field.value === '' || field.value === null) {
+                errorMessage = 'This field is required';
+                isValid = false;
+            } else if (parseFloat(field.value) <= 0 && field.type === 'number') {
+                errorMessage = 'Value must be greater than 0';
+                isValid = false;
+            } else if (parseFloat(field.value) < parseFloat(field.min) && field.hasAttribute('min')) {
+                errorMessage = `Value must be at least ${field.min}`;
+                isValid = false;
+            } else if (parseFloat(field.value) > parseFloat(field.max) && field.hasAttribute('max')) {
+                errorMessage = `Value must be at most ${field.max}`;
+                isValid = false;
+            }
+            
+            errorElement.textContent = errorMessage;
+            if (!isValid) {
+                field.classList.add('input-error');
+            }
+            
+            return isValid;
+        }
         
         function calculateEstimate() {
             // Get form values
@@ -825,13 +1204,14 @@
             // More accurate formula considering CHB thickness and joint size
             const mortarVolume = netWallArea * chbSize * 0.25; // 25% of volume is mortar
             
-            // Get mortar ratio
+            // Get mortar ratio and cement factor
+            const cementFactor = parseFloat(document.getElementById('cementFactor').value);
             const mortarRatio = document.getElementById('mortarRatio').value;
             const [cementPart, sandPart] = mortarRatio.split(':').map(Number);
             const totalParts = cementPart + sandPart;
             
-            // Calculate cement and sand for mortar (1m³ mortar requires about 9 bags of cement for 1:3 mix)
-            const cementBagsMortar = Math.ceil(mortarVolume * (cementPart / totalParts) * 9);
+            // Calculate cement and sand for mortar
+            const cementBagsMortar = Math.ceil(mortarVolume * (cementPart / totalParts) * cementFactor);
             const sandMortar = mortarVolume * (sandPart / totalParts);
             
             // Calculate reinforcement
@@ -849,11 +1229,32 @@
             const horizontalBarsCount = Math.ceil(chbLayers / horizontalLayers);
             const horizontalRebarLength = horizontalBarsCount * (wallLength + lapLengthVal);
             
+            // Calculate additional reinforcement
+            let additionalRebarLength = 0;
+            const includeCornerBars = document.getElementById('cornerBars').checked;
+            const includeLintelBars = document.getElementById('lintelBars').checked;
+            const includeDowelBars = document.getElementById('dowelBars').checked;
+            
+            if (includeCornerBars) {
+                // Add corner bars (estimate 2m per corner, assuming 4 corners)
+                additionalRebarLength += 4 * 2;
+            }
+            
+            if (includeLintelBars) {
+                // Add lintel bars above openings (estimate door width + 0.5m each side per opening)
+                additionalRebarLength += doorCount * (doorWidth + 1) + windowCount * (windowWidth + 1);
+            }
+            
+            if (includeDowelBars) {
+                // Add dowel bars (estimate 0.5m per dowel, one per vertical bar)
+                additionalRebarLength += verticalBarsCount * 0.5;
+            }
+            
             // Total rebar length with lap splices and hooks if included
             const includeLaps = document.getElementById('includeLaps').checked;
             const lapFactor = includeLaps ? 1.1 : 1.0; // 10% additional for laps and hooks
             
-            const totalRebarLength = (verticalRebarLength + horizontalRebarLength) * lapFactor;
+            const totalRebarLength = (verticalRebarLength + horizontalRebarLength + additionalRebarLength) * lapFactor;
             
             // Calculate rebar weight (kg) - using formula: (d²/162) * length
             const rebarWeight = Math.ceil((rebarDiameter * rebarDiameter / 162) * totalRebarLength);
@@ -863,6 +1264,7 @@
             let plasterSand = 0;
             const includePlaster = document.getElementById('plastering').checked;
             const plasterSides = parseInt(document.getElementById('plasterSides').value);
+            const plasterCementFactor = parseFloat(document.getElementById('plasterCementFactor').value);
             
             if (includePlaster) {
                 const plasterThickness = parseFloat(document.getElementById('plasterThickness').value) / 1000; // Convert to meters
@@ -872,8 +1274,7 @@
                 const [pCementPart, pSandPart] = plasterRatio.split(':').map(Number);
                 const pTotalParts = pCementPart + pSandPart;
                 
-                // 1m³ plaster requires about 12 bags of cement for 1:3 mix
-                plasterCementBags = Math.ceil(plasterVolume * (pCementPart / pTotalParts) * 12);
+                plasterCementBags = Math.ceil(plasterVolume * (pCementPart / pTotalParts) * plasterCementFactor);
                 plasterSand = plasterVolume * (pSandPart / pTotalParts);
             }
             
@@ -889,8 +1290,12 @@
             const weatherFactor = parseFloat(document.getElementById('weatherFactor').value) / 100;
             const crewSkill = parseFloat(document.getElementById('crewSkill').value) / 100;
             const siteAccess = parseFloat(document.getElementById('siteAccess').value) / 100;
+            const complexityFactor = parseFloat(document.getElementById('complexityFactor').value);
+            const scaffoldingFactor = parseFloat(document.getElementById('scaffoldingFactor').value);
+            const openingFactor = parseFloat(document.getElementById('openingFactor').value);
             
-            const adjustedProductivity = productivityRateValue * weatherFactor * crewSkill * siteAccess;
+            const adjustedProductivity = productivityRateValue * weatherFactor * crewSkill * siteAccess * 
+                                       complexityFactor * scaffoldingFactor * openingFactor;
             const laborDays = netWallArea / adjustedProductivity;
             
             // Get crew information
@@ -979,23 +1384,13 @@
                 rebarCostPerKg,
                 masonDailyRate,
                 helperDailyRate,
-                carpenterDailyRate
-            });
-            
-            // Generate cost breakdown
-            generateCostBreakdown({
-                totalChbCost,
-                totalCementCost,
-                totalSandCost,
-                totalRebarCost,
-                totalMasonCost,
-                totalHelperCost,
-                totalCarpenterCost,
+                carpenterDailyRate,
+                totalMaterialCost,
+                totalLaborCost,
                 wasteFactor,
                 overheadAmount,
                 profitAmount,
-                totalProjectCost,
-                netWallArea
+                totalProjectCost
             });
             
             // Update visualization
@@ -1062,20 +1457,26 @@
             const masonTotal = data.masons * data.masonDailyRate * data.laborDays;
             const helperTotal = data.helpers * data.helperDailyRate * data.laborDays;
             const carpenterTotal = data.carpenters * data.carpenterDailyRate * data.laborDays;
+            const laborTotal = masonTotal + helperTotal + carpenterTotal;
+            
+            // Calculate waste amount
+            const wasteAmount = (chbTotal + cementTotal + sandTotal + rebarTotal) * data.wasteFactor;
             
             boqDiv.innerHTML = `
-                <h3>Materials</h3>
-                <table class="boq-table">
+                <table class="qs-table">
                     <thead>
                         <tr>
-                            <th>Item</th>
+                            <th>Description</th>
                             <th>Quantity</th>
                             <th>Unit</th>
                             <th>Unit Cost</th>
-                            <th>Total Cost</th>
+                            <th>Amount</th>
                         </tr>
                     </thead>
                     <tbody>
+                        <tr>
+                            <td colspan="5" style="font-weight: bold; background-color: #f0f0f0;">Materials</td>
+                        </tr>
                         <tr>
                             <td>CHB Blocks</td>
                             <td>${data.chbQuantity}</td>
@@ -1105,116 +1506,68 @@
                             <td>₱${rebarTotal.toFixed(2)}</td>
                         </tr>
                         <tr>
-                            <td colspan="4" style="text-align: right; font-weight: 600;">Subtotal</td>
-                            <td>₱${(chbTotal + cementTotal + sandTotal + rebarTotal).toFixed(2)}</td>
+                            <td colspan="4" style="text-align: right; font-weight: 600;">Materials Subtotal</td>
+                            <td>₱${data.totalMaterialCost.toFixed(2)}</td>
                         </tr>
-                    </tbody>
-                </table>
-                
-                <h3>Labor</h3>
-                <table class="boq-table">
-                    <thead>
                         <tr>
-                            <th>Trade</th>
-                            <th>Quantity</th>
-                            <th>Days</th>
-                            <th>Daily Rate</th>
-                            <th>Total Cost</th>
+                            <td colspan="4" style="text-align: right;">Waste (${(data.wasteFactor * 100).toFixed(0)}%)</td>
+                            <td>₱${wasteAmount.toFixed(2)}</td>
                         </tr>
-                    </thead>
-                    <tbody>
+                        <tr>
+                            <td colspan="4" style="text-align: right; font-weight: 600;">Materials Total</td>
+                            <td>₱${(data.totalMaterialCost + wasteAmount).toFixed(2)}</td>
+                        </tr>
+                        
+                        <tr>
+                            <td colspan="5" style="font-weight: bold; background-color: #f0f0f0;">Labor</td>
+                        </tr>
                         <tr>
                             <td>Mason</td>
                             <td>${data.masons}</td>
-                            <td>${data.laborDays.toFixed(1)}</td>
+                            <td>days</td>
                             <td>₱${data.masonDailyRate.toFixed(2)}</td>
                             <td>₱${masonTotal.toFixed(2)}</td>
                         </tr>
                         <tr>
                             <td>Helper</td>
                             <td>${data.helpers}</td>
-                            <td>${data.laborDays.toFixed(1)}</td>
+                            <td>days</td>
                             <td>₱${data.helperDailyRate.toFixed(2)}</td>
                             <td>₱${helperTotal.toFixed(2)}</td>
                         </tr>
                         <tr>
                             <td>Carpenter</td>
                             <td>${data.carpenters}</td>
-                            <td>${data.laborDays.toFixed(1)}</td>
+                            <td>days</td>
                             <td>₱${data.carpenterDailyRate.toFixed(2)}</td>
                             <td>₱${carpenterTotal.toFixed(2)}</td>
                         </tr>
                         <tr>
-                            <td colspan="4" style="text-align: right; font-weight: 600;">Subtotal</td>
-                            <td>₱${(masonTotal + helperTotal + carpenterTotal).toFixed(2)}</td>
+                            <td colspan="4" style="text-align: right; font-weight: 600;">Labor Total</td>
+                            <td>₱${laborTotal.toFixed(2)}</td>
+                        </tr>
+                        
+                        <tr>
+                            <td colspan="5" style="font-weight: bold; background-color: #f0f0f0;">Summary</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="text-align: right;">Materials + Labor</td>
+                            <td>₱${(data.totalMaterialCost + wasteAmount + laborTotal).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="text-align: right;">Overhead</td>
+                            <td>₱${data.overheadAmount.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="text-align: right;">Profit Margin</td>
+                            <td>₱${data.profitAmount.toFixed(2)}</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="4" style="text-align: right; font-weight: bold;">TOTAL PROJECT COST</td>
+                            <td>₱${data.totalProjectCost.toFixed(2)}</td>
                         </tr>
                     </tbody>
                 </table>
-            `;
-        }
-        
-        function generateCostBreakdown(data) {
-            const costDiv = document.getElementById('costBreakdown');
-            
-            costDiv.innerHTML = `
-                <h3>Direct Costs</h3>
-                <div class="cost-summary">
-                    <div class="cost-item">
-                        <span>CHB Blocks:</span>
-                        <span>₱${data.totalChbCost.toFixed(2)}</span>
-                    </div>
-                    <div class="cost-item">
-                        <span>Cement:</span>
-                        <span>₱${data.totalCementCost.toFixed(2)}</span>
-                    </div>
-                    <div class="cost-item">
-                        <span>Sand:</span>
-                        <span>₱${data.totalSandCost.toFixed(2)}</span>
-                    </div>
-                    <div class="cost-item">
-                        <span>Rebar:</span>
-                        <span>₱${data.totalRebarCost.toFixed(2)}</span>
-                    </div>
-                    <div class="cost-item">
-                        <span>Mason Labor:</span>
-                        <span>₱${data.totalMasonCost.toFixed(2)}</span>
-                    </div>
-                    <div class="cost-item">
-                        <span>Helper Labor:</span>
-                        <span>₱${data.totalHelperCost.toFixed(2)}</span>
-                    </div>
-                    <div class="cost-item">
-                        <span>Carpenter Labor:</span>
-                        <span>₱${data.totalCarpenterCost.toFixed(2)}</span>
-                    </div>
-                    <div class="cost-item">
-                        <span>Waste (${(data.wasteFactor * 100).toFixed(0)}%):</span>
-                        <span>₱${((data.totalChbCost + data.totalCementCost + data.totalSandCost + data.totalRebarCost) * data.wasteFactor).toFixed(2)}</span>
-                    </div>
-                </div>
-                
-                <h3>Indirect Costs</h3>
-                <div class="cost-summary">
-                    <div class="cost-item">
-                        <span>Overhead:</span>
-                        <span>₱${data.overheadAmount.toFixed(2)}</span>
-                    </div>
-                    <div class="cost-item">
-                        <span>Profit Margin:</span>
-                        <span>₱${data.profitAmount.toFixed(2)}</span>
-                    </div>
-                </div>
-                
-                <div class="cost-summary">
-                    <div class="cost-item cost-total">
-                        <span>Total Project Cost:</span>
-                        <span>₱${data.totalProjectCost.toFixed(2)}</span>
-                    </div>
-                    <div class="cost-item">
-                        <span>Cost per m²:</span>
-                        <span>₱${(data.totalProjectCost / data.netWallArea).toFixed(2)}</span>
-                    </div>
-                </div>
             `;
         }
         
@@ -1232,7 +1585,7 @@
             // Calculate scaling factors to fit wall in canvas
             const scaleX = canvas.width * 0.8 / wallLength;
             const scaleY = canvas.height * 0.8 / wallHeight;
-            const scale = Math.min(scaleX, scaleY);
+            const scale = Math.min(scaleX, scaleY) * zoomLevel;
             
             // Calculate centered position
             const drawWidth = wallLength * scale;
@@ -1284,6 +1637,12 @@
                 
                 ctx.fillRect(doorX, doorY, doorDrawWidth, doorDrawHeight);
                 ctx.strokeRect(doorX, doorY, doorDrawWidth, doorDrawHeight);
+                
+                // Label doors
+                ctx.fillStyle = '#000';
+                ctx.font = '12px Arial';
+                ctx.fillText('Door ' + (i+1), doorX + 5, doorY + 15);
+                ctx.fillStyle = 'rgba(200, 200, 255, 0.5)';
             }
             
             // Draw windows
@@ -1295,6 +1654,12 @@
                 
                 ctx.fillRect(windowX, windowY, windowDrawWidth, windowDrawHeight);
                 ctx.strokeRect(windowX, windowY, windowDrawWidth, windowDrawHeight);
+                
+                // Label windows
+                ctx.fillStyle = '#000';
+                ctx.font = '12px Arial';
+                ctx.fillText('Window ' + (i+1), windowX + 5, windowY + 15);
+                ctx.fillStyle = 'rgba(200, 200, 255, 0.5)';
             }
             
             // Draw reinforcement if visible
@@ -1311,6 +1676,13 @@
                 ctx.moveTo(barX, startY);
                 ctx.lineTo(barX, startY + drawHeight);
                 ctx.stroke();
+                
+                // Label vertical bars
+                if (zoomLevel > 0.8) {
+                    ctx.fillStyle = '#000';
+                    ctx.font = '10px Arial';
+                    ctx.fillText('V' + (x/verticalSpacing + 1), barX - 5, startY + drawHeight + 15);
+                }
             }
             
             // Draw horizontal bars
@@ -1320,6 +1692,41 @@
                 ctx.moveTo(startX, barY);
                 ctx.lineTo(startX + drawWidth, barY);
                 ctx.stroke();
+                
+                // Label horizontal bars
+                if (zoomLevel > 0.8) {
+                    ctx.fillStyle = '#000';
+                    ctx.font = '10px Arial';
+                    ctx.fillText('H' + (y/(0.2 * horizontalLayers) + 1), startX - 25, barY + 5);
+                }
+            }
+            
+            // Draw corner bars if selected
+            if (document.getElementById('cornerBars').checked) {
+                ctx.strokeStyle = 'blue';
+                ctx.lineWidth = 3;
+                
+                // Draw corners
+                const corners = [
+                    [startX, startY],
+                    [startX + drawWidth, startY],
+                    [startX, startY + drawHeight],
+                    [startX + drawWidth, startY + drawHeight]
+                ];
+                
+                corners.forEach(([x, y]) => {
+                    ctx.beginPath();
+                    ctx.arc(x, y, 5 * zoomLevel, 0, Math.PI * 2);
+                    ctx.fillStyle = 'blue';
+                    ctx.fill();
+                    ctx.stroke();
+                });
+                
+                if (zoomLevel > 0.8) {
+                    ctx.fillStyle = '#000';
+                    ctx.font = '10px Arial';
+                    ctx.fillText('Corner Bar', corners[0][0] - 20, corners[0][1] - 10);
+                }
             }
             
             // Add title
@@ -1329,11 +1736,89 @@
             
             // Add scale indicator
             const meterInPixels = 1 * scale;
-            ctx.fillText('Scale: 1m', 10, 40);
+            ctx.fillText('Scale: 1m ≈ ' + meterInPixels.toFixed(0) + 'px', 10, 40);
             ctx.beginPath();
             ctx.moveTo(10, 45);
             ctx.lineTo(10 + meterInPixels, 45);
             ctx.stroke();
+        }
+        
+        function exportPDF() {
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(20);
+            doc.text('CHB Wall Estimation Report', 105, 15, { align: 'center' });
+            
+            // Add project details
+            doc.setFontSize(12);
+            doc.text(`Wall Dimensions: ${document.getElementById('wallLength').value}m x ${document.getElementById('wallHeight').value}m`, 15, 25);
+            
+            const netWallArea = document.querySelector('#netWallArea')?.textContent || 'N/A';
+            doc.text(`Net Wall Area: ${netWallArea}`, 15, 32);
+            
+            // Add BOQ table
+            doc.setFontSize(14);
+            doc.text('Bill of Quantities', 15, 45);
+            
+            // Get table data
+            const table = document.querySelector('.qs-table');
+            const rows = [];
+            
+            table.querySelectorAll('tr').forEach(row => {
+                const rowData = [];
+                row.querySelectorAll('th, td').forEach(cell => {
+                    rowData.push(cell.textContent.replace('₱', ''));
+                });
+                rows.push(rowData);
+            });
+            
+            // Create PDF table
+            doc.autoTable({
+                startY: 50,
+                head: [rows[0]],
+                body: rows.slice(1),
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219] },
+                styles: { fontSize: 10 },
+                columnStyles: {
+                    0: { cellWidth: 60 },
+                    1: { cellWidth: 25 },
+                    2: { cellWidth: 20 },
+                    3: { cellWidth: 30 },
+                    4: { cellWidth: 30 }
+                }
+            });
+            
+            // Save the PDF
+            doc.save('chb-wall-estimation.pdf');
+        }
+        
+        function exportExcel() {
+            // Create a new workbook
+            const wb = XLSX.utils.book_new();
+            
+            // Get table data
+            const table = document.querySelector('.qs-table');
+            const ws = XLSX.utils.table_to_sheet(table);
+            
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, "Bill of Quantities");
+            
+            // Add summary data
+            const summaryData = [
+                ["CHB Wall Estimation Summary"],
+                [],
+                ["Wall Dimensions", `${document.getElementById('wallLength').value}m x ${document.getElementById('wallHeight').value}m`],
+                ["Net Wall Area", document.querySelector('#netWallArea')?.textContent || 'N/A'],
+                ["Total Project Cost", document.querySelector('.total-row td:last-child')?.textContent || 'N/A']
+            ];
+            
+            const ws2 = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, ws2, "Summary");
+            
+            // Save the workbook
+            XLSX.writeFile(wb, 'chb-wall-estimation.xlsx');
         }
     </script>
 </body>
