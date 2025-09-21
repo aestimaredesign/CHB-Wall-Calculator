@@ -545,6 +545,10 @@
                     <input type="text" id="projectLocation" value="Manila, Philippines">
                 </div>
                 <div class="form-group">
+                    <label for="companyName">Company</label>
+                    <input type="text" id="companyName" value="ABC Construction Inc.">
+                </div>
+                <div class="form-group">
                     <label for="preparedBy">Prepared By</label>
                     <input type="text" id="preparedBy" value="Maria Santos, Civil Engineer">
                 </div>
@@ -1853,98 +1857,135 @@
         }
         
         function downloadPDF() {
-            try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF("p", "mm", "a4");
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF("p", "mm", "a4");
 
-                // Title Page
-                doc.setFontSize(16);
-                doc.setFont(undefined, 'bold');
-                doc.text("CHB WALL CONSTRUCTION ESTIMATE", 105, 20, { align: "center" });
+        // Get project information
+        const projectName = document.getElementById("projectName")?.value || "N/A";
+        const projectLocation = document.getElementById("projectLocation")?.value || "N/A";
+        const clientName = document.getElementById("clientName")?.value || "N/A";
+        const companyName = document.getElementById("companyName")?.value || "N/A";
+        const preparedBy = document.getElementById("preparedBy")?.value || "Estimator";
+        const currentDate = new Date().toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+        });
 
-                doc.setFontSize(12);
-                doc.setFont(undefined, 'normal');
-                doc.text(`Project: ${document.getElementById("projectName")?.value || "N/A"}`, 20, 40);
-                doc.text(`Client: ${document.getElementById("clientName")?.value || "N/A"}`, 20, 48);
-                doc.text(`Location: ${document.getElementById("projectLocation")?.value || "N/A"}`, 20, 56);
-                doc.text(`Prepared by: ${document.getElementById("preparedBy")?.value || "Estimator"}`, 20, 64);
-                doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 72);
+        // Title and Header
+        doc.setFontSize(16);
+        doc.setFont(undefined, "bold");
+        doc.text("Bill of Quantities - CHB Wall Estimation", 105, 20, { align: "center" });
 
-                // Assumptions Section
-                doc.setFont(undefined, 'bold');
-                doc.text("ASSUMPTIONS & NOTES", 20, 90);
-                doc.setFont(undefined, 'normal');
-                
-                let assumptions = [
-                    "• Material consumption based on CHB size and mortar/plaster mix ratios.",
-                    "• Reinforcement: vertical @ " + document.getElementById("rebarVertSpacing").value + "mm, horizontal @ " + document.getElementById("rebarHorizSpacing").value + "mm.",
-                    "• Plastering applied on both sides unless noted otherwise.",
-                    "• Productivity rate adjusted by complexity, scaffolding, openings, and crew skill.",
-                    "• Waste allowance, overhead, and profit included as per user inputs.",
-                    "• Estimates are conceptual and for preliminary costing purposes only."
-                ];
-                
-                let y = 100;
-                assumptions.forEach(assumption => {
-                    if (y > 270) {
-                        doc.addPage();
-                        y = 20;
+        doc.setFontSize(10);
+        doc.setFont(undefined, "normal");
+        doc.text(`Project Name: ${projectName}`, 20, 30);
+        doc.text(`Location: ${projectLocation}`, 20, 35);
+        doc.text(`Client: ${clientName}`, 20, 40);
+        doc.text(`Company: ${companyName}`, 20, 45);
+        doc.text(`Prepared By: ${preparedBy}`, 20, 50);
+        doc.text(`Date: ${currentDate}`, 20, 55);
+
+        // BOQ Table Data
+        const boqTable = document.getElementById("boqTable");
+        const tableRows = [];
+        const columnHeaders = ["Item", "Description", "Qty", "Unit", "Unit Cost (₱)", "Total Cost (₱)"];
+
+        if (boqTable) {
+            const rows = boqTable.querySelectorAll("tbody tr");
+            let itemNumber = 1;
+
+            rows.forEach(row => {
+                const cells = row.querySelectorAll("td");
+                if (cells.length >= 5) {
+                    const description = cells[0].textContent.trim();
+                    const qty = cells[1].textContent.trim();
+                    const unit = cells[2].textContent.trim();
+                    const unitCost = cells[3].textContent.replace("₱", "").trim() || "0";
+                    const totalCost = cells[4].textContent.replace("₱", "").trim() || "0";
+
+                    // Handle section headers and totals
+                    if (description.includes("Materials") || description.includes("Labor") || description.includes("Summary")) {
+                        tableRows.push([{ content: description, colSpan: 6, styles: { fontStyle: "bold", fillColor: [240, 240, 240] } }]);
+                    } else if (description.includes("Total")) {
+                        tableRows.push([{ content: description, colSpan: 5, styles: { fontStyle: "bold" } }, { content: `₱${totalCost}`, styles: { fontStyle: "bold", halign: "right" } }]);
+                    } else {
+                        tableRows.push([itemNumber++, description, qty, unit, `₱${unitCost}`, `₱${totalCost}`]);
                     }
-                    doc.text(assumption, 20, y);
-                    y += 8;
-                });
-
-                // BOQ Table
-                doc.addPage();
-                doc.setFont(undefined, 'bold');
-                doc.text("BILL OF QUANTITIES", 20, 20);
-                doc.setFont(undefined, 'normal');
-
-                const boqTable = [];
-                document.querySelectorAll("#boqTable tbody tr").forEach((row, idx) => {
-                    const cols = row.querySelectorAll("td");
-                    if (cols.length >= 5) {
-                        boqTable.push([
-                            idx + 1,
-                            cols[0].textContent.trim(),  // Description
-                            cols[1].textContent.trim(),  // Unit
-                            cols[2].textContent.trim(),  // Qty
-                            cols[3].textContent.trim(),  // Unit Rate
-                            cols[4].textContent.trim()   // Amount
-                        ]);
-                    }
-                });
-
-                doc.autoTable({
-                    head: [["Item", "Description", "Unit", "Qty", "Unit Rate", "Amount"]],
-                    body: boqTable,
-                    startY: 30,
-                    styles: { fontSize: 9 },
-                    headStyles: { fillColor: [52, 152, 219] },
-                    theme: "grid"
-                });
-
-                // Cost Summary
-                let finalY = doc.lastAutoTable.finalY + 10;
-                doc.setFont(undefined, 'bold');
-                doc.text("SUMMARY OF COSTS", 20, finalY);
-                doc.setFont(undefined, 'normal');
-                
-                doc.text("Direct Cost: " + document.getElementById("directCost").textContent, 20, finalY + 10);
-                doc.text("Overhead: " + document.getElementById("overheadCost").textContent, 20, finalY + 18);
-                doc.text("Profit: " + document.getElementById("profitCost").textContent, 20, finalY + 26);
-                doc.setFont(undefined, 'bold');
-                doc.text("Grand Total: " + document.getElementById("grandTotal").textContent, 20, finalY + 38);
-
-                // Footer
-                doc.setFontSize(8);
-                doc.text("Generated by CHB Wall Calculator", 105, 290, { align: "center" });
-
-                doc.save("CHB_Wall_Estimate.pdf");
-            } catch (error) {
-                alert("Error generating PDF: " + error.message);
-            }
+                }
+            });
         }
+
+        // Generate BOQ Table
+        doc.autoTable({
+            head: [columnHeaders],
+            body: tableRows,
+            startY: 65,
+            theme: "grid",
+            headStyles: { fillColor: [200, 200, 200], textColor: [0, 0, 0], fontStyle: "bold" },
+            styles: { fontSize: 9, cellPadding: 2, halign: "right", valign: "middle" },
+            columnStyles: {
+                0: { cellWidth: 10, halign: "center" },
+                1: { cellWidth: 40 },
+                2: { cellWidth: 15 },
+                3: { cellWidth: 15 },
+                4: { cellWidth: 20 },
+                5: { cellWidth: 25, halign: "right" }
+            },
+            didDrawPage: (data) => {
+                // Add page numbers
+                doc.setFontSize(8);
+                doc.text(`Page ${doc.internal.getNumberOfPages()}`, 200, 290);
+            }
+        });
+
+        // Add Labor Requirements
+        const laborY = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(12);
+        doc.setFont(undefined, "bold");
+        doc.text("Labor Requirements", 20, laborY);
+
+        const laborData = [
+            ["Description", "Quantity", "Unit"],
+            ["Masons", document.getElementById("masons").value, "persons"],
+            ["Helpers", document.getElementById("helpers").value, "persons"],
+            ["Carpenters", document.getElementById("carpenters").value, "persons"],
+            ["Duration", document.querySelector('[data-labor-days]')?.textContent.replace("days", "").trim() || "N/A", "days"]
+        ];
+
+        doc.autoTable({
+            head: [laborData[0]],
+            body: laborData.slice(1),
+            startY: laborY + 5,
+            theme: "grid",
+            headStyles: { fillColor: [200, 200, 200], textColor: [0, 0, 0], fontStyle: "bold" },
+            styles: { fontSize: 10, cellPadding: 3, halign: "right" },
+            columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 20 }, 2: { cellWidth: 20 } }
+        });
+
+        // Add Visualization (Convert Canvas to Image)
+        const canvas = document.getElementById("wallCanvas");
+        if (canvas) {
+            const imgData = canvas.toDataURL("image/png");
+            const imgWidth = 180;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            const vizY = doc.lastAutoTable.finalY + 10;
+            doc.addImage(imgData, "PNG", 20, vizY, imgWidth, imgHeight);
+            doc.text("Wall Visualization", 20, vizY - 5);
+        }
+
+        // Footer
+        doc.setFontSize(8);
+        doc.text("Generated by CHB Wall Calculator - xAI Grok 3", 105, 290, { align: "center" });
+
+        // Save the PDF
+        doc.save(`CHB_Wall_BOQ_${projectName.replace(/ /g, "_")}_${currentDate}.pdf`);
+    } catch (error) {
+        console.error("PDF Generation Error:", error);
+        alert("Error generating PDF. Check console for details.");
+    }
+}
         
         function exportExcel() {
             // Create a new workbook
