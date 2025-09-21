@@ -1873,24 +1873,24 @@
             day: "numeric"
         });
 
-        // Title and Header
+        // Header
         doc.setFontSize(16);
         doc.setFont(undefined, "bold");
-        doc.text("Bill of Quantities - CHB Wall Estimation", 105, 20, { align: "center" });
+        doc.text("Bill of Quantities", 105, 20, { align: "center" });
 
         doc.setFontSize(10);
         doc.setFont(undefined, "normal");
         doc.text(`Project Name: ${projectName}`, 20, 30);
-        doc.text(`Location: ${projectLocation}`, 20, 35);
+        doc.text(`Project Location: ${projectLocation}`, 20, 35);
         doc.text(`Client: ${clientName}`, 20, 40);
         doc.text(`Company: ${companyName}`, 20, 45);
-        doc.text(`Prepared By: ${preparedBy}`, 20, 50);
-        doc.text(`Date: ${currentDate}`, 20, 55);
+        doc.text(`Date: ${currentDate}`, 20, 50);
+        doc.text(`Prepared By: ${preparedBy}`, 20, 55);
 
         // BOQ Table Data
         const boqTable = document.getElementById("boqTable");
         const tableRows = [];
-        const columnHeaders = ["Item", "Description", "Qty", "Unit", "Unit Cost (₱)", "Total Cost (₱)"];
+        const columnHeaders = ["Item", "Scope of Work", "Qty", "Unit", "Unit Cost", "Cost", "Total Cost"];
 
         if (boqTable) {
             const rows = boqTable.querySelectorAll("tbody tr");
@@ -1907,14 +1907,23 @@
 
                     // Handle section headers and totals
                     if (description.includes("Materials") || description.includes("Labor") || description.includes("Summary")) {
-                        tableRows.push([{ content: description, colSpan: 6, styles: { fontStyle: "bold", fillColor: [240, 240, 240] } }]);
+                        tableRows.push([{ content: description, colSpan: 7, styles: { fontStyle: "bold", fillColor: [240, 240, 240] } }]);
                     } else if (description.includes("Total")) {
-                        tableRows.push([{ content: description, colSpan: 5, styles: { fontStyle: "bold" } }, { content: `₱${totalCost}`, styles: { fontStyle: "bold", halign: "right" } }]);
+                        tableRows.push([{ content: description, colSpan: 6, styles: { fontStyle: "bold" } }, { content: `₱${totalCost}`, styles: { halign: "right", fontStyle: "bold" } }]);
+                    } else if (description === "Overhead" || description === "Profit") {
+                        tableRows.push(["", description, "", "", "", "", `₱${totalCost}`]);
                     } else {
-                        tableRows.push([itemNumber++, description, qty, unit, `₱${unitCost}`, `₱${totalCost}`]);
+                        // Calculate "Cost" as unit cost × qty (material cost only)
+                        const cost = parseFloat(unitCost) * parseFloat(qty.replace(/[^0-9.]/g, "")) || 0;
+                        tableRows.push([itemNumber++, description, qty, unit, `₱${unitCost}`, `₱${cost.toFixed(2)}`, `₱${totalCost}`]);
                     }
                 }
             });
+
+            // Add empty rows if needed to match sample
+            while (tableRows.length < 12) { // 4 items + 2 empty + totals + overhead/profit
+                tableRows.push(["", "", "", "", "", "", ""]);
+            }
         }
 
         // Generate BOQ Table
@@ -1931,26 +1940,26 @@
                 2: { cellWidth: 15 },
                 3: { cellWidth: 15 },
                 4: { cellWidth: 20 },
-                5: { cellWidth: 25, halign: "right" }
+                5: { cellWidth: 20 },
+                6: { cellWidth: 25 }
             },
             didDrawPage: (data) => {
-                // Add page numbers
                 doc.setFontSize(8);
                 doc.text(`Page ${doc.internal.getNumberOfPages()}`, 200, 290);
             }
         });
 
-        // Add Labor Requirements
+        // Labor Requirements Table
         const laborY = doc.lastAutoTable.finalY + 10;
         doc.setFontSize(12);
         doc.setFont(undefined, "bold");
         doc.text("Labor Requirements", 20, laborY);
 
         const laborData = [
-            ["Description", "Quantity", "Unit"],
-            ["Masons", document.getElementById("masons").value, "persons"],
-            ["Helpers", document.getElementById("helpers").value, "persons"],
-            ["Carpenters", document.getElementById("carpenters").value, "persons"],
+            ["Description", "Qty", "Unit"],
+            ["Mason", document.getElementById("masons").value, "Labor"],
+            ["Helper", document.getElementById("helpers").value, "Labor"],
+            ["Carpenter", document.getElementById("carpenters").value, "Labor"],
             ["Duration", document.querySelector('[data-labor-days]')?.textContent.replace("days", "").trim() || "N/A", "days"]
         ];
 
@@ -1963,17 +1972,6 @@
             styles: { fontSize: 10, cellPadding: 3, halign: "right" },
             columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 20 }, 2: { cellWidth: 20 } }
         });
-
-        // Add Visualization (Convert Canvas to Image)
-        const canvas = document.getElementById("wallCanvas");
-        if (canvas) {
-            const imgData = canvas.toDataURL("image/png");
-            const imgWidth = 180;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            const vizY = doc.lastAutoTable.finalY + 10;
-            doc.addImage(imgData, "PNG", 20, vizY, imgWidth, imgHeight);
-            doc.text("Wall Visualization", 20, vizY - 5);
-        }
 
         // Footer
         doc.setFontSize(8);
