@@ -2067,33 +2067,39 @@ function getBOQTableData() {
     
     rows.forEach(row => {
         const cells = row.querySelectorAll('th, td');
-        const rowData = [];
+        const rowData = ['', '', '', '', '']; // Initialize empty row
         
-        cells.forEach(cell => {
-            // Remove currency symbols and trim whitespace
+        cells.forEach((cell, index) => {
             let text = cell.textContent.replace(/[₱P,]/g, '').trim();
             
             // Handle section headers (grey-header class)
             if (cell.classList.contains('grey-header')) {
-                if (cell.colSpan > 1) {
-                    text = cell.textContent.trim();
-                    rowData.push(text, '', '', '', '');
-                } else {
-                    rowData.push(text);
+                if (index === 0) {
+                    rowData[0] = text; // Put section header in first column
                 }
-            } else {
-                rowData.push(text);
+            } 
+            // Handle summary rows that span multiple columns
+            else if (cell.colSpan > 1 && cell.style.textAlign === 'right') {
+                // This is a total row - description in 4th column, amount in 5th
+                if (index === 0 && cells.length === 2) {
+                    rowData[3] = cells[0].textContent.trim();
+                    rowData[4] = cells[1].textContent.replace(/[₱P,]/g, '').trim();
+                }
+            }
+            // Regular data rows
+            else if (index < 5) {
+                rowData[index] = text;
             }
         });
         
-        if (rowData.length > 0) {
+        // Only add non-empty rows
+        if (rowData.some(cell => cell !== '')) {
             data.push(rowData);
         }
     });
     
     return data.length > 0 ? data : getDefaultBOQData();
 }
-
 // Fallback function if no BOQ table is found
 function getDefaultBOQData() {
     return [
@@ -2106,14 +2112,14 @@ function getDefaultBOQData() {
         ["", "", "", "Waste (5%)", "753.30"],
         ["", "", "", "Materials Total", "15,819.34"],
         ["Labor", "", "", "", ""],
-        ["Mason", "2", "days", "600.00", "4,659.28"],
-        ["Helper", "2", "days", "400.00", "3,106.19"],
-        ["Carpenter", "1", "days", "500.00", "1,941.37"],
+        ["Mason", "2", "days", "600.00", "4,698.28"],
+        ["Helper", "2", "days", "400.00", "3,108.18"],
+        ["Carpenter", "1", "days", "500.00", "1,841.37"],
         ["", "", "", "Labor Total", "9,706.83"],
         ["Summary", "", "", "", ""],
         ["", "", "", "Materials + Labor", "25,526.17"],
-        ["", "", "", "Overhead", "3,828.93"],
-        ["", "", "", "Profit Margin", "2,935.51"],
+        ["", "", "", "Overhead", "3,828.63"],
+        ["", "", "", "Profit Margin", "2,893.51"],
         ["", "", "", "TOTAL PROJECT COST", "32,290.61"]
     ];
 }
