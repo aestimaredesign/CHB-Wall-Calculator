@@ -1627,6 +1627,13 @@
             
             // Update visualization
             drawWallVisualization();
+            window.estimationResults = {
+  netWallArea: netWallArea.toFixed(2), // Make sure to get this value from your existing calculations
+  totalMaterialsCost: totalMaterialsCost.toFixed(2),
+  totalLaborCost: totalLaborCost.toFixed(2),
+  totalProjectCost: totalProjectCost.toFixed(2),
+  totalDays: totalDays.toFixed(1),
+};
         }
         
         function displayResults(data) {
