@@ -1939,121 +1939,107 @@
         }
         
         function generatePDF() {
-            try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
-                // 1. Retrieve data from the stored object and HTML inputs
-                const projectName = document.getElementById("projectName")?.value || "Residential Boundary Wall";
-                const clientName = document.getElementById("clientName")?.value || "John Dela Cruz";
-                const projectLocation = document.getElementById("projectLocation")?.value || "Manila, Philippines";
-                const preparedBy = document.getElementById("preparedBy")?.value || "Maria Santos, Civil Engineer";
+    // Fetch the data from the calculation results
+    const projectName = document.getElementById('projectName')?.value || "N/A";
+    const clientName = document.getElementById('clientName')?.value || "N/A";
+    const projectLocation = document.getElementById('projectLocation')?.value || "N/A";
+    const preparedBy = document.getElementById('preparedBy')?.value || "Estimator";
+    const totalCost = document.querySelector('#totalProjectCost')?.textContent || 'N/A';
+    const totalDays = document.querySelector('#totalLaborDays')?.textContent || 'N/A';
+    const netArea = document.querySelector('#netWallArea')?.textContent || 'N/A';
+    const boqData = document.getElementById('boq');
 
-                const margin = 15;
-                let y = margin;
+    if (!boqData || boqData.innerHTML.includes('alert')) {
+      alert("Please run a calculation before exporting to PDF.");
+      return;
+    }
 
-                // 2. Add header information
-                doc.setFontSize(18);
-                doc.setFont("helvetica", "bold");
-                doc.text("CHB Wall Estimation Report", margin, y);
-                y += 10;
-                doc.setFontSize(10);
-                doc.setFont("helvetica", "normal");
-                doc.text(`Project: ${projectName}`, margin, y);
-                doc.text(`Client: ${clientName}`, 100, y);
-                y += 5;
-                doc.text(`Location: ${projectLocation}`, margin, y);
-                doc.text(`Date: ${new Date().toLocaleDateString()}`, 100, y);
-                y += 5;
-                doc.text(`Prepared by: ${preparedBy}`, margin, y);
-                y += 15;
+    // Extract table data using the HTML table itself
+    const table = document.querySelector('.qs-table');
+    const head = Array.from(table.tHead.rows[0].cells).map(th => th.textContent.trim());
+    const body = Array.from(table.tBodies[0].rows).map(row =>
+      Array.from(row.cells).map(td => td.textContent.trim())
+    );
 
-                // 3. Add Bill of Quantities table
-                doc.setFontSize(14);
-                doc.setFont("helvetica", "bold");
-                doc.text("Bill of Quantities", margin, y);
-                y += 10;
+    // Document header
+    doc.setFontSize(18);
+    doc.text("CHB Wall Estimation Report", 14, 22);
 
-                // Table headers
-                const headers = [["Description", "Quantity", "Unit", "Unit Rate", "Amount"]];
-                doc.autoTable({
-                    startY: y,
-                    head: headers,
-                    body: [
-                        ["Materials", "", "", "", ""],
-                        ["CHB Blocks", "316", "pcs", "₱25.00", "₱7900.00"],
-                        ["Cement", "6", "bags", "₱250.00", "₱1500.00"],
-                        ["Sand", "1.51", "m³", "₱800.00", "₱1211.04"],
-                        ["Rebar (12mm)", "99", "kg", "₱45.00", "₱4455.00"],
-                        ["Materials Subtotal", "", "", "", "₱15066.04"],
-                        ["Waste (5%)", "", "", "", "₱753.30"],
-                        ["Materials Total", "", "", "", "₱15819.34"],
-                        ["", "", "", "", ""],
-                        ["Labor", "", "", "", ""],
-                        ["Mason", "2", "days", "₱600.00", "₱4659.28"],
-                        ["Helper", "2", "days", "₱400.00", "₱3106.19"],
-                        ["Carpenter", "1", "days", "₱500.00", "₱1941.37"],
-                        ["Labor Total", "", "", "", "₱9706.83"],
-                        ["", "", "", "", ""],
-                        ["Summary", "", "", "", ""],
-                        ["Materials + Labor", "", "", "", "₱25526.17"],
-                        ["Overhead", "", "", "", "₱3828.93"],
-                        ["Profit Margin", "", "", "", "₱2935.51"],
-                        ["", "", "", "", ""],
-                        ["TOTAL PROJECT COST", "", "", "", "₱32290.61"]
-                    ],
-                    theme: 'grid',
-                    styles: { 
-                        fontSize: 10, 
-                        cellPadding: 3,
-                        lineColor: [0, 0, 0],
-                        lineWidth: 0.1
-                    },
-                    headStyles: {
-                        fillColor: [220, 220, 220],
-                        textColor: [0, 0, 0],
-                        fontStyle: 'bold'
-                    },
-                    bodyStyles: {
-                        fillColor: [255, 255, 255],
-                        textColor: [0, 0, 0],
-                        fontStyle: 'normal'
-                    },
-                    alternateRowStyles: {
-                        fillColor: [240, 240, 240]
-                    },
-                    didParseCell: function(data) {
-                        // Make section headers bold and with background
-                        if (data.section === 'body') {
-                            if (data.row.index === 0 || data.row.index === 9 || data.row.index === 15) {
-                                data.cell.styles.fillColor = [224, 224, 224];
-                                data.cell.styles.fontStyle = 'bold';
-                            }
-                            
-                            // Make totals bold
-                            if (data.row.index === 5 || data.row.index === 7 || data.row.index === 13 || 
-                                data.row.index === 16 || data.row.index === 17 || data.row.index === 18 || 
-                                data.row.index === 20) {
-                                data.cell.styles.fontStyle = 'bold';
-                            }
-                            
-                            // Right align the last two columns
-                            if (data.column.index === 3 || data.column.index === 4) {
-                                data.cell.styles.halign = 'right';
-                            }
-                        }
-                    },
-                    didDrawPage: function (data) {
-                        doc.setFontSize(10);
-                        doc.text(`Page ${data.pageNumber}`, 200, 285, { align: "right" });
-                    }
-                });
+    doc.setFontSize(10);
+    doc.text(`Project: ${projectName}`, 14, 30);
+    doc.text(`Client: ${clientName}`, 14, 35);
+    doc.text(`Location: ${projectLocation}`, 14, 40);
+    doc.text(`Prepared By: ${preparedBy}`, 14, 45);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 50);
 
-                doc.save("CHB_Wall_Estimate.pdf");
-            } catch (error) {
-                alert("Error generating PDF: " + error.message);
-            }
-        }
+    // Bill of Quantities table
+    doc.setFontSize(12);
+    doc.text("Bill of Quantities", 14, 60);
+
+    // --- Start of corrected autoTable call ---
+    doc.autoTable({
+      head: [head],
+      body: body,
+      startY: 65,
+      theme: 'grid',
+      styles: {
+        fontSize: 10,
+        cellPadding: 3,
+        overflow: 'linebreak'
+      },
+      columnStyles: {
+        0: { cellWidth: 'auto', halign: 'left' },
+        1: { halign: 'right' },
+        2: { halign: 'right' },
+        3: { halign: 'right' }
+      },
+      headStyles: {
+        fillColor: '#E0E0E0',
+        textColor: '#333333',
+        fontStyle: 'bold'
+      },
+      footStyles: {
+        fontStyle: 'bold'
+      },
+      didDrawPage: function(data) {
+        doc.setFontSize(8);
+        doc.text(`Page ${data.pageNumber}`, 200, 285, { align: "right" });
+      }
+    });
+    // --- End of corrected autoTable call ---
+
+    // Summary section
+    let finalY = doc.autoTable.previous.finalY;
+    doc.setFontSize(12);
+    doc.text("Summary", 14, finalY + 15);
+
+    const summaryData = [
+      ['Total Wall Area', netArea],
+      ['Total Labor Days', totalDays],
+      ['Total Project Cost', totalCost]
+    ];
+
+    doc.autoTable({
+      body: summaryData,
+      startY: finalY + 20,
+      theme: 'plain',
+      styles: { fontSize: 10, cellPadding: 2 },
+      columnStyles: {
+        0: { halign: 'left', fontStyle: 'bold' },
+        1: { halign: 'right' }
+      }
+    });
+
+    doc.save("CHB_Wall_Estimate.pdf");
+
+  } catch (error) {
+    alert("Error generating PDF: " + error.message);
+  }
+}
         
         function exportExcel() {
             // Create a new workbook
