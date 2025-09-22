@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional CHB Wall Estimation Calculator</title>
+    <title>CHB Wall Estimation Calculator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -520,12 +520,26 @@
             font-weight: bold;
             color: var(--primary);
         }
+        
+        .reset-btn {
+            background: var(--warning);
+            margin-top: 20px;
+        }
+        
+        .reset-btn:hover {
+            background: #e67e22;
+        }
+        
+        .grey-header {
+            background-color: #e0e0e0 !important;
+            font-weight: bold !important;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Professional CHB Wall Estimation Calculator</h1>
+            <h1>CHB Wall Estimation Calculator</h1>
             <p>Compliant with NSCP, ACI, ASTM, and Eurocode standards</p>
         </header>
         
@@ -997,6 +1011,7 @@
                     </div>
                     
                     <button type="button" id="calculateBtn" class="btn btn-block">Calculate Estimate</button>
+                    <button type="button" id="resetBtn" class="btn btn-block reset-btn">Reset Form</button>
                 </form>
             </div>
             
@@ -1185,6 +1200,9 @@
                 }
             });
             
+            // Reset button event
+            document.getElementById('resetBtn').addEventListener('click', resetForm);
+            
             // Export buttons
             document.getElementById('exportPDF').addEventListener('click', downloadPDF);
             document.getElementById('exportExcel').addEventListener('click', exportExcel);
@@ -1224,6 +1242,74 @@
             // Initial visualization
             drawWallVisualization();
         });
+        
+        function resetForm() {
+            // Reset form fields to default values
+            document.getElementById('calculatorForm').reset();
+            
+            // Reset specific fields that might not reset with form.reset()
+            document.getElementById('chbSize').value = '0.15';
+            document.getElementById('rebarVertSpacing').value = '800';
+            document.getElementById('rebarHorizSpacing').value = '3';
+            document.getElementById('rebarDiameter').value = '12';
+            document.getElementById('includeLaps').checked = true;
+            document.getElementById('lapLength').value = '480';
+            document.getElementById('mortarRatio').value = '1:4';
+            document.getElementById('cementFactor').value = '9';
+            document.getElementById('plastering').checked = true;
+            document.getElementById('plasterSides').value = '2';
+            document.getElementById('plasterRatio').value = '1:3';
+            document.getElementById('plasterCementFactor').value = '12';
+            document.getElementById('plasterThickness').value = '20';
+            document.getElementById('productivityRate').value = '8';
+            document.getElementById('customRateContainer').style.display = 'none';
+            document.getElementById('complexityFactor').value = '0.9';
+            document.getElementById('scaffoldingFactor').value = '0.95';
+            document.getElementById('openingFactor').value = '0.95';
+            document.getElementById('masons').value = '2';
+            document.getElementById('helpers').value = '2';
+            document.getElementById('carpenters').value = '1';
+            document.getElementById('chbCost').value = '25';
+            document.getElementById('cementCost').value = '250';
+            document.getElementById('sandCost').value = '800';
+            document.getElementById('rebarCost').value = '45';
+            document.getElementById('masonDailyRate').value = '600';
+            document.getElementById('helperDailyRate').value = '400';
+            document.getElementById('carpenterDailyRate').value = '500';
+            
+            // Reset sliders
+            document.getElementById('wasteFactorSlider').value = '5';
+            document.getElementById('wasteFactorValue').textContent = '5%';
+            document.getElementById('wasteFactor').value = '5';
+            
+            document.getElementById('weatherFactorSlider').value = '100';
+            document.getElementById('weatherFactorValue').textContent = '100%';
+            document.getElementById('weatherFactor').value = '100';
+            
+            document.getElementById('crewSkillSlider').value = '100';
+            document.getElementById('crewSkillValue').textContent = '100%';
+            document.getElementById('crewSkill').value = '100';
+            
+            document.getElementById('siteAccessSlider').value = '100';
+            document.getElementById('siteAccessValue').textContent = '100%';
+            document.getElementById('siteAccess').value = '100';
+            
+            document.getElementById('overheadSlider').value = '15';
+            document.getElementById('overheadValue').textContent = '15%';
+            document.getElementById('overhead').value = '15';
+            
+            document.getElementById('profitMarginSlider').value = '10';
+            document.getElementById('profitMarginValue').textContent = '10%';
+            document.getElementById('profitMargin').value = '10';
+            
+            // Clear results
+            document.getElementById('results').innerHTML = '<p class="alert alert-warning">Enter wall dimensions and click Calculate to see results</p>';
+            document.getElementById('boq').innerHTML = '<p class="alert alert-warning">Calculation required to generate BOQ</p>';
+            
+            // Reset visualization
+            zoomLevel = 1;
+            drawWallVisualization();
+        }
         
         function resizeCanvas() {
             const container = document.querySelector('.visualization');
@@ -1621,7 +1707,7 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td colspan="5" style="font-weight: bold; background-color: #f0f0f0;">Materials</td>
+                            <td colspan="5" class="grey-header">Materials</td>
                         </tr>
                         <tr>
                             <td>CHB Blocks</td>
@@ -1665,7 +1751,7 @@
                         </tr>
                         
                         <tr>
-                            <td colspan="5" style="font-weight: bold; background-color: #f0f0f0;">Labor</td>
+                            <td colspan="5" class="grey-header">Labor</td>
                         </tr>
                         <tr>
                             <td>Mason</td>
@@ -1694,7 +1780,7 @@
                         </tr>
                         
                         <tr>
-                            <td colspan="5" style="font-weight: bold; background-color: #f0f0f0;">Summary</td>
+                            <td colspan="5" class="grey-header">Summary</td>
                         </tr>
                         <tr>
                             <td colspan="4" style="text-align: right;">Materials + Labor</td>
@@ -1852,99 +1938,100 @@
             }
         }
         
-        function downloadPDF() {
-            try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF("p", "mm", "a4");
+        function generatePDF() {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
-                // Title Page
-                doc.setFontSize(16);
-                doc.setFont(undefined, 'bold');
-                doc.text("CHB WALL CONSTRUCTION ESTIMATE", 105, 20, { align: "center" });
+    // 1. Define margins and starting Y position
+    const margin = 15;
+    let y = margin;
 
-                doc.setFontSize(12);
-                doc.setFont(undefined, 'normal');
-                doc.text(`Project: ${document.getElementById("projectName")?.value || "N/A"}`, 20, 40);
-                doc.text(`Client: ${document.getElementById("clientName")?.value || "N/A"}`, 20, 48);
-                doc.text(`Location: ${document.getElementById("projectLocation")?.value || "N/A"}`, 20, 56);
-                doc.text(`Prepared by: ${document.getElementById("preparedBy")?.value || "Estimator"}`, 20, 64);
-                doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 72);
+    // 2. Add header information like in the picture
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("CHB Wall Estimation Report", margin, y);
+    y += 10;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Project: ${document.getElementById("projectName").value || "N/A"}`, margin, y);
+    doc.text(`Client: ${document.getElementById("clientName").value || "N/A"}`, 100, y);
+    y += 5;
+    doc.text(`Location: ${document.getElementById("projectLocation").value || "N/A"}`, margin, y);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 100, y);
+    y += 5;
+    doc.text(`Prepared by: ${document.getElementById("preparedBy").value || "Estimator"}`, margin, y);
+    y += 15;
 
-                // Assumptions Section
-                doc.setFont(undefined, 'bold');
-                doc.text("ASSUMPTIONS & NOTES", 20, 90);
-                doc.setFont(undefined, 'normal');
-                
-                let assumptions = [
-                    "• Material consumption based on CHB size and mortar/plaster mix ratios.",
-                    "• Reinforcement: vertical @ " + document.getElementById("rebarVertSpacing").value + "mm, horizontal @ " + document.getElementById("rebarHorizSpacing").value + "mm.",
-                    "• Plastering applied on both sides unless noted otherwise.",
-                    "• Productivity rate adjusted by complexity, scaffolding, openings, and crew skill.",
-                    "• Waste allowance, overhead, and profit included as per user inputs.",
-                    "• Estimates are conceptual and for preliminary costing purposes only."
-                ];
-                
-                let y = 100;
-                assumptions.forEach(assumption => {
-                    if (y > 270) {
-                        doc.addPage();
-                        y = 20;
-                    }
-                    doc.text(assumption, 20, y);
-                    y += 8;
-                });
+    // Add a horizontal line to separate sections
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, 210 - margin, y);
+    y += 5;
 
-                // BOQ Table
-                doc.addPage();
-                doc.setFont(undefined, 'bold');
-                doc.text("BILL OF QUANTITIES", 20, 20);
-                doc.setFont(undefined, 'normal');
+    // 3. Add Project Dimensions Summary
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Project Dimensions", margin, y);
+    y += 7;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Wall Dimensions: ${document.getElementById('wallLength').value}m x ${document.getElementById('wallHeight').value}m`, margin, y);
+    doc.text(`Net Wall Area: ${document.querySelector('#netWallArea').textContent}`, 100, y);
+    y += 15;
 
-                const boqTable = [];
-                document.querySelectorAll("#boqTable tbody tr").forEach((row, idx) => {
-                    const cols = row.querySelectorAll("td");
-                    if (cols.length >= 5) {
-                        boqTable.push([
-                            idx + 1,
-                            cols[0].textContent.trim(),  // Description
-                            cols[1].textContent.trim(),  // Unit
-                            cols[2].textContent.trim(),  // Qty
-                            cols[3].textContent.trim(),  // Unit Rate
-                            cols[4].textContent.trim()   // Amount
-                        ]);
-                    }
-                });
+    // 4. Create the main table (Bill of Quantities)
+    const columns = ["ITEM", "DESCRIPTION", "UNIT", "QTY", "UNIT COST", "AMOUNT"];
+    const rows = [];
+    const tableRows = document.querySelectorAll('.qs-table tbody tr');
+    tableRows.forEach(row => {
+      const rowData = [];
+      row.querySelectorAll('td').forEach(cell => {
+        rowData.push(cell.textContent.trim());
+      });
+      rows.push(rowData);
+    });
 
-                doc.autoTable({
-                    head: [["Item", "Description", "Unit", "Qty", "Unit Rate", "Amount"]],
-                    body: boqTable,
-                    startY: 30,
-                    styles: { fontSize: 9 },
-                    headStyles: { fillColor: [52, 152, 219] },
-                    theme: "grid"
-                });
+    doc.autoTable({
+      startY: y,
+      head: [columns],
+      body: rows,
+      theme: 'grid',
+      styles: { cellPadding: 2, fontSize: 10, valign: 'middle' },
+      headStyles: { fillColor: [52, 152, 219], textColor: 255, fontStyle: 'bold' },
+      didDrawPage: function (data) {
+        // Page footer
+        doc.setFontSize(10);
+        doc.text(`Page ${data.pageNumber} of ${doc.internal.pages.length}`, 200, 285, { align: "right" });
+      }
+    });
 
-                // Cost Summary
-                let finalY = doc.lastAutoTable.finalY + 10;
-                doc.setFont(undefined, 'bold');
-                doc.text("SUMMARY OF COSTS", 20, finalY);
-                doc.setFont(undefined, 'normal');
-                
-                doc.text("Direct Cost: " + document.getElementById("directCost").textContent, 20, finalY + 10);
-                doc.text("Overhead: " + document.getElementById("overheadCost").textContent, 20, finalY + 18);
-                doc.text("Profit: " + document.getElementById("profitCost").textContent, 20, finalY + 26);
-                doc.setFont(undefined, 'bold');
-                doc.text("Grand Total: " + document.getElementById("grandTotal").textContent, 20, finalY + 38);
+    // Update Y position after the table
+    y = doc.autoTable.previous.finalY + 10;
 
-                // Footer
-                doc.setFontSize(8);
-                doc.text("Generated by CHB Wall Calculator", 105, 290, { align: "center" });
+    // 5. Add a summary section below the table
+    const materialsCost = document.querySelector('#totalMaterialsCost')?.textContent || '0.00';
+    const laborCost = document.querySelector('#totalLaborCost')?.textContent || '0.00';
+    const totalCost = document.querySelector('.total-row td:last-child')?.textContent || '0.00';
 
-                doc.save("CHB_Wall_Estimate.pdf");
-            } catch (error) {
-                alert("Error generating PDF: " + error.message);
-            }
-        }
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Summary of Costs", 150, y, { align: 'right' });
+    y += 7;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Total Materials Cost: ${materialsCost}`, 150, y, { align: 'right' });
+    y += 5;
+    doc.text(`Total Labor Cost: ${laborCost}`, 150, y, { align: 'right' });
+    y += 5;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total Project Cost: ${totalCost}`, 150, y, { align: 'right' });
+
+    doc.save("CHB_Wall_Estimate.pdf");
+  } catch (error) {
+    alert("Error generating PDF: " + error.message);
+  }
+}
         
         function exportExcel() {
             // Create a new workbook
