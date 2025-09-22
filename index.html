@@ -1950,27 +1950,39 @@
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // 1. Define margins and starting Y position
+    // 1. Retrieve data from the stored object and HTML inputs
+    const results = window.estimationResults;
+    if (!results) {
+      alert("Please calculate the estimate first.");
+      return;
+    }
+
+    const projectName = document.getElementById("projectName")?.value || "N/A";
+    const clientName = document.getElementById("clientName")?.value || "N/A";
+    const projectLocation = document.getElementById("projectLocation")?.value || "N/A";
+    const preparedBy = document.getElementById("preparedBy")?.value || "Estimator";
+    const wallLength = document.getElementById('wallLength')?.value || "N/A";
+    const wallHeight = document.getElementById('wallHeight')?.value || "N/A";
+
     const margin = 15;
     let y = margin;
 
-    // 2. Add header information like in the picture
+    // 2. Add header information
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
     doc.text("CHB Wall Estimation Report", margin, y);
     y += 10;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Project: ${document.getElementById("projectName").value || "N/A"}`, margin, y);
-    doc.text(`Client: ${document.getElementById("clientName").value || "N/A"}`, 100, y);
+    doc.text(`Project: ${projectName}`, margin, y);
+    doc.text(`Client: ${clientName}`, 100, y);
     y += 5;
-    doc.text(`Location: ${document.getElementById("projectLocation").value || "N/A"}`, margin, y);
+    doc.text(`Location: ${projectLocation}`, margin, y);
     doc.text(`Date: ${new Date().toLocaleDateString()}`, 100, y);
     y += 5;
-    doc.text(`Prepared by: ${document.getElementById("preparedBy").value || "Estimator"}`, margin, y);
+    doc.text(`Prepared by: ${preparedBy}`, margin, y);
     y += 15;
 
-    // Add a horizontal line to separate sections
     doc.setLineWidth(0.5);
     doc.line(margin, y, 210 - margin, y);
     y += 5;
@@ -1982,8 +1994,8 @@
     y += 7;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Wall Dimensions: ${document.getElementById('wallLength').value}m x ${document.getElementById('wallHeight').value}m`, margin, y);
-    doc.text(`Net Wall Area: ${document.querySelector('#netWallArea').textContent}`, 100, y);
+    doc.text(`Wall Dimensions: ${wallLength}m x ${wallHeight}m`, margin, y);
+    doc.text(`Net Wall Area: ${results.netWallArea} m²`, 100, y);
     y += 15;
 
     // 4. Create the main table (Bill of Quantities)
@@ -2006,33 +2018,27 @@
       styles: { cellPadding: 2, fontSize: 10, valign: 'middle' },
       headStyles: { fillColor: [52, 152, 219], textColor: 255, fontStyle: 'bold' },
       didDrawPage: function (data) {
-        // Page footer
         doc.setFontSize(10);
         doc.text(`Page ${data.pageNumber} of ${doc.internal.pages.length}`, 200, 285, { align: "right" });
       }
     });
 
-    // Update Y position after the table
     y = doc.autoTable.previous.finalY + 10;
 
     // 5. Add a summary section below the table
-    const materialsCost = document.querySelector('#totalMaterialsCost')?.textContent || '0.00';
-    const laborCost = document.querySelector('#totalLaborCost')?.textContent || '0.00';
-    const totalCost = document.querySelector('.total-row td:last-child')?.textContent || '0.00';
-
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text("Summary of Costs", 150, y, { align: 'right' });
     y += 7;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Total Materials Cost: ${materialsCost}`, 150, y, { align: 'right' });
+    doc.text(`Total Materials Cost: ₱${results.totalMaterialsCost}`, 150, y, { align: 'right' });
     y += 5;
-    doc.text(`Total Labor Cost: ${laborCost}`, 150, y, { align: 'right' });
+    doc.text(`Total Labor Cost: ₱${results.totalLaborCost}`, 150, y, { align: 'right' });
     y += 5;
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text(`Total Project Cost: ${totalCost}`, 150, y, { align: 'right' });
+    doc.text(`Total Project Cost: ₱${results.totalProjectCost}`, 150, y, { align: 'right' });
 
     doc.save("CHB_Wall_Estimate.pdf");
   } catch (error) {
