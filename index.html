@@ -2011,14 +2011,12 @@
             ],
             theme: 'grid',
             styles: {
-                fontSize: 9, // Slightly smaller font for better fit
-                cellPadding: 3, // Adequate padding
-                lineColor: [0, 0, 0],
-                lineWidth: 0.1,
-                valign: 'middle',
-                halign: 'left',
-                font: 'helvetica',
-                textColor: [0, 0, 0]
+    fontSize: 8, // Even smaller font
+    cellPadding: 2, // Reduced padding
+    lineHeight: 1.2, // Tighter line spacing
+    valign: 'middle',
+    halign: 'left',
+    font: 'helvetica'
             },
             headStyles: {
                 fillColor: [220, 220, 220],
@@ -2038,26 +2036,12 @@
                 fillColor: [245, 245, 245]
             },
             columnStyles: {
-                0: { 
-                    cellWidth: 70, 
-                    halign: 'left' // Description column left-aligned
-                },
-                1: { 
-                    cellWidth: 22, 
-                    halign: 'right' // Quantity right-aligned
-                },
-                2: { 
-                    cellWidth: 18, 
-                    halign: 'center' // Unit center-aligned
-                },
-                3: { 
-                    cellWidth: 28, 
-                    halign: 'right' // Unit Rate right-aligned
-                },
-                4: { 
-                    cellWidth: 32, 
-                    halign: 'right' // Amount right-aligned
-                }
+    0: { cellWidth: 65, halign: 'left' },
+    1: { cellWidth: 20, halign: 'right' },
+    2: { cellWidth: 15, halign: 'center' },
+    3: { cellWidth: 25, halign: 'right' },
+    4: { cellWidth: 30, halign: 'right' }
+}
             },
             didParseCell: function(data) {
                 // Style section headers
