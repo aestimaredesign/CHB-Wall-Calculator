@@ -2010,33 +2010,46 @@
                 fillColor: [245, 245, 245]
             },
             didParseCell: function(data) {
-                const rowText = (data.cell.raw || "").toString();
+                const rowIndex = data.row.index;
+                const cellValue = (data.cell.raw || "").toString();
                 
-                // Style section headers
-                if (rowText === "Materials" || rowText === "Labor" || rowText === "Summary") {
+                // Style section headers (Materials, Labor, Summary)
+                if (cellValue === "Materials" || cellValue === "Labor" || cellValue === "Summary") {
                     data.cell.styles.fillColor = [224, 224, 224];
                     data.cell.styles.fontStyle = 'bold';
                     data.cell.styles.halign = 'left';
-                    // Merge cells for section headers
-                    if (data.column.index === 0) {
-                        data.cell.colSpan = 5;
+                    data.cell.colSpan = 5;
+                }
+                
+                // For summary rows, ensure descriptions are in column 0 and amounts in column 4
+                if (rowIndex >= 13 && rowIndex <= 17) { // Summary section rows
+                    if (data.column.index === 0 && cellValue) {
+                        // This is a description in the correct column - keep it
+                        data.cell.styles.fontStyle = 'bold';
+                    } else if (data.column.index === 3 && cellValue && !cellValue.match(/^\d/)) {
+                        // This is a description wrongly placed in unit rate column - move to description column
+                        data.cell.raw = ""; // Clear from unit rate column
+                        if (data.row.cells[0]) {
+                            data.row.cells[0].raw = cellValue; // Move to description column
+                            data.row.cells[0].styles = { fontStyle: 'bold', halign: 'left' };
+                        }
+                    } else if (data.column.index === 1 && cellValue && cellValue.match(/^\d/)) {
+                        // This is an amount wrongly placed in quantity column - clear it
+                        data.cell.raw = "";
                     }
                 }
                 
                 // Style totals and subtotals
-                if (rowText.includes("Subtotal") || rowText.includes("Total") || rowText.includes("TOTAL") || 
-                    rowText.includes("Overhead") || rowText.includes("Profit Margin") || 
-                    rowText.includes("Materials + Labor")) {
+                if (cellValue.includes("Subtotal") || cellValue.includes("Total") || cellValue.includes("TOTAL") || 
+                    cellValue.includes("Overhead") || cellValue.includes("Profit Margin") || 
+                    cellValue.includes("Materials + Labor") || cellValue.includes("Waste")) {
                     data.cell.styles.fontStyle = 'bold';
-                    if (data.column.index > 0) {
+                    if (data.column.index === 4) { // Amount column
                         data.cell.styles.halign = 'right';
+                    } else if (data.column.index === 3 && cellValue.match(/^\d/)) {
+                        // This is an amount in unit rate column - clear it
+                        data.cell.raw = "";
                     }
-                }
-                
-                // Style the grand total row
-                if (rowText.includes("TOTAL PROJECT COST")) {
-                    data.cell.styles.fillColor = [200, 200, 200];
-                    data.cell.styles.fontStyle = 'bold';
                 }
             },
             didDrawPage: function(data) {
@@ -2057,50 +2070,7 @@
     }
 }
 
-// Helper function to extract BOQ data from the HTML table
-function getBOQTableData() {
-    const table = document.getElementById('boqTable');
-    if (!table) return getDefaultBOQData();
-    
-    const rows = table.querySelectorAll('tr');
-    const data = [];
-    
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('th, td');
-        const rowData = ['', '', '', '', '']; // Initialize empty row
-        
-        cells.forEach((cell, index) => {
-            let text = cell.textContent.replace(/[₱P,]/g, '').trim();
-            
-            // Handle section headers (grey-header class)
-            if (cell.classList.contains('grey-header')) {
-                if (index === 0) {
-                    rowData[0] = text; // Put section header in first column
-                }
-            } 
-            // Handle summary rows that span multiple columns
-            else if (cell.colSpan > 1 && cell.style.textAlign === 'right') {
-                // This is a total row - description in 4th column, amount in 5th
-                if (index === 0 && cells.length === 2) {
-                    rowData[3] = cells[0].textContent.trim();
-                    rowData[4] = cells[1].textContent.replace(/[₱P,]/g, '').trim();
-                }
-            }
-            // Regular data rows
-            else if (index < 5) {
-                rowData[index] = text;
-            }
-        });
-        
-        // Only add non-empty rows
-        if (rowData.some(cell => cell !== '')) {
-            data.push(rowData);
-        }
-    });
-    
-    return data.length > 0 ? data : getDefaultBOQData();
-}
-// Fallback function if no BOQ table is found
+// Fallback function if no BOQ table is found - CORRECTED VERSION
 function getDefaultBOQData() {
     return [
         ["Materials", "", "", "", ""],
@@ -2108,18 +2078,18 @@ function getDefaultBOQData() {
         ["Cement", "6", "bags", "250.00", "1,500.00"],
         ["Sand", "1.51", "m³", "800.00", "1,211.04"],
         ["Rebar (12mm)", "99", "kg", "45.00", "4,455.00"],
-        ["", "", "", "Materials Subtotal", "15,066.04"],
-        ["", "", "", "Waste (5%)", "753.30"],
-        ["", "", "", "Materials Total", "15,819.34"],
+        ["Materials Subtotal", "", "", "", "15,066.04"],
+        ["Waste (5%)", "", "", "", "753.30"],
+        ["Materials Total", "", "", "", "15,819.34"],
         ["Labor", "", "", "", ""],
         ["Mason", "2", "days", "600.00", "4,698.28"],
         ["Helper", "2", "days", "400.00", "3,108.18"],
         ["Carpenter", "1", "days", "500.00", "1,841.37"],
-        ["", "", "", "Labor Total", "9,706.83"],
+        ["Labor Total", "", "", "", "9,706.83"],
         ["Summary", "", "", "", ""],
         ["Materials + Labor", "", "", "", "25,526.17"],
-        ["Overhead", "", "", "", "3,828.63"],
-        ["Profit Margin", "", "", "", "2,893.51"],
+        ["Overhead", "", "", "", "3,828.93"],
+        ["Profit Margin", "", "", "", "2,935.51"],
         ["TOTAL PROJECT COST", "", "", "", "32,290.61"]
     ];
 }
