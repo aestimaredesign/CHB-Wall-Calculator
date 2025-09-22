@@ -1969,136 +1969,84 @@
         doc.text(`Date: ${date}`, 100, y);
         y += 5;
         doc.text(`Prepared by: ${preparedBy}`, margin, y);
-        y += 15;
+        y += 10;
 
+        // Get actual BOQ data from the displayed table
+        const boqTable = getBOQTableData();
+        
         // Add Bill of Quantities title
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
         doc.text("Bill of Quantities", margin, y);
-        y += 10;
+        y += 8;
 
-        // Create the table with proper formatting
+        // Configure and draw the table
         doc.autoTable({
-            startY: y,
             head: [["Description", "Quantity", "Unit", "Unit Rate", "Amount"]],
-            body: [
-                // Materials section
-                ["Materials", "", "", "", ""],
-                ["CHB Blocks", "316", "pcs", "₱25.00", "₱7,900.00"],
-                ["Cement", "6", "bags", "₱250.00", "₱1,500.00"],
-                ["Sand", "1.51", "m³", "₱800.00", "₱1,211.04"],
-                ["Rebar (12mm)", "99", "kg", "₱45.00", "₱4,455.00"],
-                ["Materials Subtotal", "", "", "", "₱15,066.04"],
-                ["Waste (5%)", "", "", "", "₱753.30"],
-                ["Materials Total", "", "", "", "₱15,819.34"],
-                ["", "", "", "", ""], // Spacer row
-                
-                // Labor section
-                ["Labor", "", "", "", ""],
-                ["Mason", "2", "days", "₱600.00", "₱4,659.28"],
-                ["Helper", "2", "days", "₱400.00", "₱3,106.19"],
-                ["Carpenter", "1", "days", "₱500.00", "₱1,941.37"],
-                ["Labor Total", "", "", "", "₱9,706.83"],
-                ["", "", "", "", ""], // Spacer row
-                
-                // Summary section
-                ["Summary", "", "", "", ""],
-                ["Materials + Labor", "", "", "", "₱25,526.17"],
-                ["Overhead", "", "", "", "₱3,828.93"],
-                ["Profit Margin", "", "", "", "₱2,935.51"],
-                ["", "", "", "", ""], // Spacer row
-                ["TOTAL PROJECT COST", "", "", "", "₱32,290.61"]
-            ],
-            theme: 'grid',
+            body: boqTable,
+            startY: y,
+            theme: "grid",
             styles: {
-    fontSize: 8, // Even smaller font
-    cellPadding: 2, // Reduced padding
-    lineHeight: 1.2, // Tighter line spacing
-    valign: 'middle',
-    halign: 'left',
-    font: 'helvetica'
+                fontSize: 8,
+                cellPadding: 3,
+                valign: "middle",
+                lineColor: [0, 0, 0],
+                lineWidth: 0.1
+            },
+            columnStyles: {
+                0: { halign: "left", cellWidth: 70 },
+                1: { halign: "center", cellWidth: 25 },
+                2: { halign: "center", cellWidth: 20 },
+                3: { halign: "right", cellWidth: 30 },
+                4: { halign: "right", cellWidth: 35 }
             },
             headStyles: {
                 fillColor: [220, 220, 220],
-                textColor: [0, 0, 0],
-                fontStyle: 'bold',
-                halign: 'center',
-                cellPadding: 3
-            },
-            bodyStyles: {
-                fillColor: [255, 255, 255],
-                textColor: [0, 0, 0],
-                fontStyle: 'normal',
-                halign: 'left',
-                cellPadding: 3
+                textColor: 0,
+                fontStyle: "bold",
+                lineWidth: 0.1
             },
             alternateRowStyles: {
                 fillColor: [245, 245, 245]
             },
-            columnStyles: {
-    0: { cellWidth: 65, halign: 'left' },
-    1: { cellWidth: 20, halign: 'right' },
-    2: { cellWidth: 15, halign: 'center' },
-    3: { cellWidth: 25, halign: 'right' },
-    4: { cellWidth: 30, halign: 'right' }
-}
-            },
             didParseCell: function(data) {
+                const rowText = (data.cell.raw || "").toString();
+                
                 // Style section headers
-                if (data.section === 'body') {
-                    const rowText = data.cell.raw || '';
-                    
-                    // Make section headers bold with background
-                    if (rowText === "Materials" || rowText === "Labor" || rowText === "Summary") {
-                        data.cell.styles.fillColor = [224, 224, 224];
-                        data.cell.styles.fontStyle = 'bold';
-                        data.cell.styles.halign = 'left';
-                    }
-                    
-                    // Make totals bold and right-aligned for numeric columns
-                    if (rowText.includes("Subtotal") || 
-                        rowText.includes("Total") || 
-                        rowText.includes("TOTAL")) {
-                        data.cell.styles.fontStyle = 'bold';
-                        
-                        // Right-align numeric columns for totals
-                        if (data.column.index > 0) {
-                            data.cell.styles.halign = 'right';
-                        }
-                    }
-                    
-                    // Handle spacer rows (empty rows)
-                    if (rowText === "") {
-                        data.cell.styles.fillColor = [255, 255, 255];
-                        data.cell.styles.lineWidth = 0; // No borders for spacer rows
+                if (rowText === "Materials" || rowText === "Labor" || rowText === "Summary") {
+                    data.cell.styles.fillColor = [224, 224, 224];
+                    data.cell.styles.fontStyle = 'bold';
+                    data.cell.styles.halign = 'left';
+                    // Merge cells for section headers
+                    if (data.column.index === 0) {
+                        data.cell.colSpan = 5;
                     }
                 }
-            },
-            willDrawCell: function(data) {
-                // Ensure text doesn't overflow by adding ellipsis if needed
-                if (data.cell.text && data.cell.text.length > 20) {
-                    data.cell.text = data.cell.text.substring(0, 17) + '...';
+                
+                // Style totals and subtotals
+                if (rowText.includes("Subtotal") || rowText.includes("Total") || rowText.includes("TOTAL") || 
+                    rowText.includes("Overhead") || rowText.includes("Profit Margin") || 
+                    rowText.includes("Materials + Labor")) {
+                    data.cell.styles.fontStyle = 'bold';
+                    if (data.column.index > 0) {
+                        data.cell.styles.halign = 'right';
+                    }
+                }
+                
+                // Style the grand total row
+                if (rowText.includes("TOTAL PROJECT COST")) {
+                    data.cell.styles.fillColor = [200, 200, 200];
+                    data.cell.styles.fontStyle = 'bold';
                 }
             },
             didDrawPage: function(data) {
-                // Add page numbers
-                doc.setFontSize(10);
+                doc.setFontSize(8);
                 doc.setTextColor(100);
-                doc.text(`Page ${data.pageNumber}`, doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 10, {
-                    align: 'right'
-                });
+                doc.text(`Page ${data.pageNumber}`, 
+                    doc.internal.pageSize.width - 15, 
+                    doc.internal.pageSize.height - 10);
             },
-            margin: { 
-                top: y,
-                left: margin,
-                right: margin,
-                bottom: 20
-            },
-            tableWidth: 'auto',
-            showHead: 'firstPage',
-            startY: y,
-            pageBreak: 'auto',
-            rowPageBreak: 'avoid'
+            margin: { top: y, left: margin, right: margin }
         });
 
         // Save the PDF
@@ -2107,6 +2055,67 @@
         alert("Error generating PDF: " + error.message);
         console.error(error);
     }
+}
+
+// Helper function to extract BOQ data from the HTML table
+function getBOQTableData() {
+    const table = document.getElementById('boqTable');
+    if (!table) return getDefaultBOQData();
+    
+    const rows = table.querySelectorAll('tr');
+    const data = [];
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('th, td');
+        const rowData = [];
+        
+        cells.forEach(cell => {
+            // Remove currency symbols and trim whitespace
+            let text = cell.textContent.replace(/[₱P,]/g, '').trim();
+            
+            // Handle section headers (grey-header class)
+            if (cell.classList.contains('grey-header')) {
+                if (cell.colSpan > 1) {
+                    text = cell.textContent.trim();
+                    rowData.push(text, '', '', '', '');
+                } else {
+                    rowData.push(text);
+                }
+            } else {
+                rowData.push(text);
+            }
+        });
+        
+        if (rowData.length > 0) {
+            data.push(rowData);
+        }
+    });
+    
+    return data.length > 0 ? data : getDefaultBOQData();
+}
+
+// Fallback function if no BOQ table is found
+function getDefaultBOQData() {
+    return [
+        ["Materials", "", "", "", ""],
+        ["CHB Blocks", "316", "pcs", "25.00", "7,900.00"],
+        ["Cement", "6", "bags", "250.00", "1,500.00"],
+        ["Sand", "1.51", "m³", "800.00", "1,211.04"],
+        ["Rebar (12mm)", "99", "kg", "45.00", "4,455.00"],
+        ["", "", "", "Materials Subtotal", "15,066.04"],
+        ["", "", "", "Waste (5%)", "753.30"],
+        ["", "", "", "Materials Total", "15,819.34"],
+        ["Labor", "", "", "", ""],
+        ["Mason", "2", "days", "600.00", "4,659.28"],
+        ["Helper", "2", "days", "400.00", "3,106.19"],
+        ["Carpenter", "1", "days", "500.00", "1,941.37"],
+        ["", "", "", "Labor Total", "9,706.83"],
+        ["Summary", "", "", "", ""],
+        ["", "", "", "Materials + Labor", "25,526.17"],
+        ["", "", "", "Overhead", "3,828.93"],
+        ["", "", "", "Profit Margin", "2,935.51"],
+        ["", "", "", "TOTAL PROJECT COST", "32,290.61"]
+    ];
 }
         
         function exportExcel() {
