@@ -1939,106 +1939,155 @@
         }
         
         function generatePDF() {
-  try {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    // Fetch the data from the calculation results
-    const projectName = document.getElementById('projectName')?.value || "N/A";
-    const clientName = document.getElementById('clientName')?.value || "N/A";
-    const projectLocation = document.getElementById('projectLocation')?.value || "N/A";
-    const preparedBy = document.getElementById('preparedBy')?.value || "Estimator";
-    const totalCost = document.querySelector('#totalProjectCost')?.textContent || 'N/A';
-    const totalDays = document.querySelector('#totalLaborDays')?.textContent || 'N/A';
-    const netArea = document.querySelector('#netWallArea')?.textContent || 'N/A';
-    const boqData = document.getElementById('boq');
-
-    if (!boqData || boqData.innerHTML.includes('alert')) {
-      alert("Please run a calculation before exporting to PDF.");
-      return;
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Get project information
+        const projectName = document.getElementById("projectName")?.value || "Residential Boundary Wall";
+        const clientName = document.getElementById("clientName")?.value || "John Dela Cruz";
+        const projectLocation = document.getElementById("projectLocation")?.value || "Manila, Philippines";
+        const preparedBy = document.getElementById("preparedBy")?.value || "Maria Santos, Civil Engineer";
+        const date = new Date().toLocaleDateString();
+        
+        // Set margins and initial position
+        const margin = 15;
+        let y = margin;
+        
+        // Add header information
+        doc.setFontSize(18);
+        doc.setFont("helvetica", "bold");
+        doc.text("CHB Wall Estimation Report", margin, y);
+        y += 10;
+        
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Project: ${projectName}`, margin, y);
+        doc.text(`Client: ${clientName}`, 100, y);
+        y += 5;
+        doc.text(`Location: ${projectLocation}`, margin, y);
+        doc.text(`Date: ${date}`, 100, y);
+        y += 5;
+        doc.text(`Prepared by: ${preparedBy}`, margin, y);
+        y += 15;
+        
+        // Get BOQ table data
+        const boqTable = document.getElementById('boqTable');
+        if (!boqTable) {
+            throw new Error("BOQ table not found. Please calculate the estimate first.");
+        }
+        
+        // Extract table data
+        const rows = [];
+        const tableRows = boqTable.querySelectorAll('tr');
+        
+        tableRows.forEach(row => {
+            const rowData = [];
+            const cells = row.querySelectorAll('th, td');
+            
+            cells.forEach(cell => {
+                // Clean up text content
+                let text = cell.textContent.trim();
+                
+                // Handle currency formatting
+                if (text.startsWith('P') && text.length > 1) {
+                    text = '₱' + text.substring(1);
+                }
+                
+                rowData.push(text);
+            });
+            
+            rows.push(rowData);
+        });
+        
+        // Add Bill of Quantities table
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("Bill of Quantities", margin, y);
+        y += 10;
+        
+        // Create the table
+        doc.autoTable({
+            startY: y,
+            head: [rows[0]], // First row as header
+            body: rows.slice(1), // Rest as body
+            theme: 'grid',
+            styles: {
+                fontSize: 9,
+                cellPadding: 3,
+                lineColor: [0, 0, 0],
+                lineWidth: 0.1,
+                valign: 'middle'
+            },
+            headStyles: {
+                fillColor: [220, 220, 220],
+                textColor: [0, 0, 0],
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            bodyStyles: {
+                fillColor: [255, 255, 255],
+                textColor: [0, 0, 0],
+                fontStyle: 'normal'
+            },
+            alternateRowStyles: {
+                fillColor: [245, 245, 245]
+            },
+            columnStyles: {
+                0: { cellWidth: 'auto', halign: 'left' }, // Description
+                1: { cellWidth: 25, halign: 'right' },    // Quantity
+                2: { cellWidth: 20, halign: 'center' },   // Unit
+                3: { cellWidth: 30, halign: 'right' },    // Unit Rate
+                4: { cellWidth: 30, halign: 'right' }     // Amount
+            },
+            didParseCell: function(data) {
+                // Style section headers
+                if (data.section === 'body') {
+                    const rowText = data.row.cells[0]?.text || '';
+                    
+                    if (rowText.includes('Materials') || 
+                        rowText.includes('Labor') || 
+                        rowText.includes('Summary')) {
+                        data.cell.styles.fillColor = [224, 224, 224];
+                        data.cell.styles.fontStyle = 'bold';
+                        data.cell.styles.halign = 'left';
+                    }
+                    
+                    // Style totals
+                    if (rowText.includes('Subtotal') || 
+                        rowText.includes('Total') || 
+                        rowText.includes('TOTAL')) {
+                        data.cell.styles.fontStyle = 'bold';
+                    }
+                }
+                
+                // Right align numeric columns
+                if (data.column.index === 1 || data.column.index === 3 || data.column.index === 4) {
+                    data.cell.styles.halign = 'right';
+                }
+                
+                // Center align unit column
+                if (data.column.index === 2) {
+                    data.cell.styles.halign = 'center';
+                }
+            },
+            didDrawPage: function(data) {
+                // Add page numbers
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text(`Page ${data.pageNumber}`, doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 10, {
+                    align: 'right'
+                });
+            },
+            margin: { top: y }
+        });
+        
+        // Save the PDF
+        doc.save("CHB_Wall_Estimate.pdf");
+    } catch (error) {
+        alert("Error generating PDF: " + error.message);
+        console.error(error);
     }
-
-    // Extract table data using the HTML table itself
-    const table = document.querySelector('.qs-table');
-    const head = Array.from(table.tHead.rows[0].cells).map(th => th.textContent.trim());
-    const body = Array.from(table.tBodies[0].rows).map(row =>
-      Array.from(row.cells).map(td => td.textContent.trim())
-    );
-
-    // Document header
-    doc.setFontSize(18);
-    doc.text("CHB Wall Estimation Report", 14, 22);
-
-    doc.setFontSize(10);
-    doc.text(`Project: ${projectName}`, 14, 30);
-    doc.text(`Client: ${clientName}`, 14, 35);
-    doc.text(`Location: ${projectLocation}`, 14, 40);
-    doc.text(`Prepared By: ${preparedBy}`, 14, 45);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 50);
-
-    // Bill of Quantities table
-    doc.setFontSize(12);
-    doc.text("Bill of Quantities", 14, 60);
-
-    // --- Start of corrected autoTable call ---
-    doc.autoTable({
-      head: [head],
-      body: body,
-      startY: 65,
-      theme: 'grid',
-      styles: {
-        fontSize: 10,
-        cellPadding: 3,
-        overflow: 'linebreak'
-      },
-      columnStyles: {
-        0: { cellWidth: 'auto', halign: 'left' },
-        1: { halign: 'right' },
-        2: { halign: 'right' },
-        3: { halign: 'right' }
-      },
-      headStyles: {
-        fillColor: '#E0E0E0',
-        textColor: '#333333',
-        fontStyle: 'bold'
-      },
-      footStyles: {
-        fontStyle: 'bold'
-      },
-      didDrawPage: function(data) {
-        doc.setFontSize(8);
-        doc.text(`Page ${data.pageNumber}`, 200, 285, { align: "right" });
-      }
-    });
-    // --- End of corrected autoTable call ---
-
-    // Summary section
-    let finalY = doc.autoTable.previous.finalY;
-    doc.setFontSize(12);
-    doc.text("Summary", 14, finalY + 15);
-
-    const summaryData = [
-      ['Total Wall Area', netArea],
-      ['Total Labor Days', totalDays],
-      ['Total Project Cost', totalCost]
-    ];
-
-    doc.autoTable({
-      body: summaryData,
-      startY: finalY + 20,
-      theme: 'plain',
-      styles: { fontSize: 10, cellPadding: 2 },
-      columnStyles: {
-        0: { halign: 'left', fontStyle: 'bold' },
-        1: { halign: 'right' }
-      }
-    });
-
-    doc.save("CHB_Wall_Estimate.pdf");
-
-  } catch (error) {
-    alert("Error generating PDF: " + error.message);
-  }
 }
         
         function exportExcel() {
