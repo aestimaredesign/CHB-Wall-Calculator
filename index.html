@@ -2040,9 +2040,9 @@
                 4: { cellWidth: 30, halign: 'right' }  // Amount
             },
             didParseCell: function(data) {
-                // Style section headers
+                // Style section headers and totals
                 if (data.section === 'body') {
-                    const rowText = data.cell.raw || '';
+                    const rowText = (data.cell.raw || '').toString(); // Ensure rowText is a string
                     if (rowText === "Materials" || rowText === "Labor" || rowText === "Summary") {
                         data.cell.styles.fillColor = [224, 224, 224]; // Gray background
                         data.cell.styles.fontStyle = 'bold';
