@@ -1942,24 +1942,24 @@
     try {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        
+
         // Get project information
         const projectName = document.getElementById("projectName")?.value || "Residential Boundary Wall";
         const clientName = document.getElementById("clientName")?.value || "John Dela Cruz";
         const projectLocation = document.getElementById("projectLocation")?.value || "Manila, Philippines";
         const preparedBy = document.getElementById("preparedBy")?.value || "Maria Santos, Civil Engineer";
         const date = new Date().toLocaleDateString();
-        
+
         // Set margins and initial position
         const margin = 15;
         let y = margin;
-        
+
         // Add header information
         doc.setFontSize(18);
         doc.setFont("helvetica", "bold");
         doc.text("CHB Wall Estimation Report", margin, y);
         y += 10;
-        
+
         doc.setFontSize(10);
         doc.setFont("helvetica", "normal");
         doc.text(`Project: ${projectName}`, margin, y);
@@ -1970,14 +1970,14 @@
         y += 5;
         doc.text(`Prepared by: ${preparedBy}`, margin, y);
         y += 15;
-        
+
         // Add Bill of Quantities table
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
         doc.text("Bill of Quantities", margin, y);
         y += 10;
-        
-        // Create the table with proper left alignment
+
+        // Create the table with improved styling and alignment
         doc.autoTable({
             startY: y,
             head: [["Description", "Quantity", "Unit", "Unit Rate", "Amount"]],
@@ -1991,110 +1991,84 @@
                 ["Materials Subtotal", "", "", "", "₱15,066.04"],
                 ["Waste (5%)", "", "", "", "₱753.30"],
                 ["Materials Total", "", "", "", "₱15,819.34"],
-                ["", "", "", "", ""],
-                
+                [{ content: "", rowSpan: 1, colSpan: 5 }], // Spacer row
+
                 // Labor section
                 ["Labor", "", "", "", ""],
                 ["Mason", "2", "days", "₱600.00", "₱4,659.28"],
                 ["Helper", "2", "days", "₱400.00", "₱3,106.19"],
                 ["Carpenter", "1", "days", "₱500.00", "₱1,941.37"],
                 ["Labor Total", "", "", "", "₱9,706.83"],
-                ["", "", "", "", ""],
-                
+                [{ content: "", rowSpan: 1, colSpan: 5 }], // Spacer row
+
                 // Summary section
                 ["Summary", "", "", "", ""],
                 ["Materials + Labor", "", "", "", "₱25,526.17"],
                 ["Overhead", "", "", "", "₱3,828.93"],
                 ["Profit Margin", "", "", "", "₱2,935.51"],
-                ["", "", "", "", ""],
                 ["TOTAL PROJECT COST", "", "", "", "₱32,290.61"]
             ],
             theme: 'grid',
             styles: {
                 fontSize: 10,
-                cellPadding: 4,
-                lineColor: [0, 0, 0],
+                cellPadding: 5,
+                lineColor: [150, 150, 150],
                 lineWidth: 0.1,
                 valign: 'middle',
-                halign: 'left', // Default to left alignment
                 font: 'helvetica'
             },
             headStyles: {
-                fillColor: [220, 220, 220],
+                fillColor: [200, 200, 200], // Light gray background
                 textColor: [0, 0, 0],
                 fontStyle: 'bold',
-                halign: 'center'
+                halign: 'center',
+                fontSize: 12
             },
             bodyStyles: {
                 fillColor: [255, 255, 255],
                 textColor: [0, 0, 0],
-                fontStyle: 'normal',
-                halign: 'left' // Ensure left alignment for body
+                fontStyle: 'normal'
             },
             alternateRowStyles: {
-                fillColor: [245, 245, 245],
-                halign: 'left'
+                fillColor: [245, 245, 245] // Light gray alternate rows
             },
             columnStyles: {
-                0: { 
-                    cellWidth: 70, 
-                    halign: 'left', // Force left alignment for description column
-                    fontStyle: 'bold' // Make section headers bold
-                },
-                1: { 
-                    cellWidth: 25, 
-                    halign: 'right' // Right align numbers
-                },
-                2: { 
-                    cellWidth: 20, 
-                    halign: 'center' // Center align units
-                },
-                3: { 
-                    cellWidth: 30, 
-                    halign: 'right' // Right align currency
-                },
-                4: { 
-                    cellWidth: 30, 
-                    halign: 'right' // Right align currency
-                }
+                0: { cellWidth: 70, halign: 'left' }, // Description
+                1: { cellWidth: 25, halign: 'right' }, // Quantity
+                2: { cellWidth: 20, halign: 'center' }, // Unit
+                3: { cellWidth: 30, halign: 'right' }, // Unit Rate
+                4: { cellWidth: 30, halign: 'right' }  // Amount
             },
             didParseCell: function(data) {
                 // Style section headers
                 if (data.section === 'body') {
                     const rowText = data.cell.raw || '';
-                    
-                    // Make section headers bold with background
                     if (rowText === "Materials" || rowText === "Labor" || rowText === "Summary") {
-                        data.cell.styles.fillColor = [224, 224, 224];
+                        data.cell.styles.fillColor = [224, 224, 224]; // Gray background
                         data.cell.styles.fontStyle = 'bold';
                         data.cell.styles.halign = 'left';
                     }
-                    
-                    // Make totals bold
-                    if (rowText.includes("Subtotal") || 
-                        rowText.includes("Total") || 
-                        rowText.includes("TOTAL")) {
+                    // Style totals and subtotals
+                    if (rowText.includes("Subtotal") || rowText.includes("Total") || rowText.includes("TOTAL")) {
                         data.cell.styles.fontStyle = 'bold';
-                        data.cell.styles.halign = 'right';
+                        if (data.column.index > 0) data.cell.styles.halign = 'right'; // Right align totals
                     }
-                    
-                    // Right align numeric values in the first column if they're numbers
-                    if (data.column.index === 0 && !isNaN(parseFloat(rowText))) {
+                    // Ensure numeric values in first column are right-aligned if numbers
+                    if (data.column.index === 0 && !isNaN(parseFloat(rowText)) && rowText !== "") {
                         data.cell.styles.halign = 'right';
                     }
                 }
             },
             didDrawPage: function(data) {
-                // Add page numbers
+                // Add footer with page number
                 doc.setFontSize(10);
                 doc.setTextColor(100);
-                doc.text(`Page ${data.pageNumber}`, doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 10, {
-                    align: 'right'
-                });
+                doc.text(`Page ${data.pageNumber} of ${doc.internal.getNumberOfPages()}`, 
+                         doc.internal.pageSize.width - 30, doc.internal.pageSize.height - 10, { align: 'right' });
             },
             margin: { top: y }
         });
-        
+
         // Save the PDF
         doc.save("CHB_Wall_Estimate.pdf");
     } catch (error) {
