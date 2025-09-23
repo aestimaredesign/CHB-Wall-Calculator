@@ -1950,6 +1950,9 @@
         const preparedBy = document.getElementById("preparedBy")?.value || "Maria Santos, Civil Engineer";
         const date = new Date().toLocaleDateString();
 
+        // Get the actual calculated values from the results or recalculate
+        const boqTable = getCalculatedBOQData();
+        
         // Set margins and initial position
         const margin = 15;
         let y = margin;
@@ -1971,8 +1974,16 @@
         doc.text(`Prepared by: ${preparedBy}`, margin, y);
         y += 10;
 
-        // Use the corrected default BOQ data
-        const boqTable = getDefaultBOQData();
+        // Add wall dimensions summary
+        const wallLength = document.getElementById('wallLength').value || '10';
+        const wallHeight = document.getElementById('wallHeight').value || '3';
+        const netWallArea = document.querySelector('#results p strong')?.textContent?.match(/\d+\.\d+/)?.[0] || '0';
+        
+        doc.setFontSize(11);
+        doc.text(`Wall Dimensions: ${wallLength}m × ${wallHeight}m`, margin, y);
+        y += 5;
+        doc.text(`Net Wall Area: ${netWallArea} m²`, margin, y);
+        y += 10;
         
         // Add Bill of Quantities title
         doc.setFontSize(14);
@@ -2010,10 +2021,9 @@
                 fillColor: [245, 245, 245]
             },
             didParseCell: function(data) {
-                const rowIndex = data.row.index;
                 const cellValue = (data.cell.raw || "").toString();
                 
-                // Style section headers (Materials, Labor, Summary)
+                // Style section headers
                 if (cellValue === "Materials" || cellValue === "Labor" || cellValue === "Summary") {
                     data.cell.styles.fillColor = [224, 224, 224];
                     data.cell.styles.fontStyle = 'bold';
@@ -2026,18 +2036,12 @@
                     cellValue.includes("Overhead") || cellValue.includes("Profit Margin") || 
                     cellValue.includes("Materials + Labor") || cellValue.includes("Waste")) {
                     data.cell.styles.fontStyle = 'bold';
-                    if (data.column.index === 4) { // Amount column
-                        data.cell.styles.halign = 'right';
-                    }
                 }
                 
                 // Style the grand total row
                 if (cellValue.includes("TOTAL PROJECT COST")) {
                     data.cell.styles.fillColor = [200, 200, 200];
                     data.cell.styles.fontStyle = 'bold';
-                    if (data.column.index === 4) {
-                        data.cell.styles.halign = 'right';
-                    }
                 }
             },
             didDrawPage: function(data) {
@@ -2058,27 +2062,132 @@
     }
 }
 
-// CORRECTED default BOQ data with proper column alignment
-function getDefaultBOQData() {
+// Function to get actual calculated values
+function getCalculatedBOQData() {
+    // Try to get values from the displayed BOQ table first
+    const table = document.getElementById('boqTable');
+    if (table) {
+        return extractDataFromTable(table);
+    }
+    
+    // If no table found, try to get values from the results display
+    return getValuesFromResults();
+}
+
+// Extract data from the HTML BOQ table
+function extractDataFromTable(table) {
+    const rows = table.querySelectorAll('tr');
+    const data = [];
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td, th');
+        const rowData = [];
+        
+        cells.forEach(cell => {
+            let text = cell.textContent.trim();
+            // Remove currency symbols but keep numbers and text
+            text = text.replace(/[₱P]/g, '').trim();
+            rowData.push(text);
+        });
+        
+        if (rowData.length > 0 && !rowData.every(cell => cell === '')) {
+            // Ensure we have exactly 5 columns
+            while (rowData.length < 5) rowData.push('');
+            if (rowData.length > 5) rowData.length = 5;
+            data.push(rowData);
+        }
+    });
+    
+    return data.length > 0 ? data : getValuesFromResults();
+}
+
+// Fallback: Get values from the results display
+function getValuesFromResults() {
+    // Get values from the form and calculations
+    const wallLength = parseFloat(document.getElementById('wallLength').value) || 10;
+    const wallHeight = parseFloat(document.getElementById('wallHeight').value) || 3;
+    
+    // Calculate areas
+    const doorCount = parseInt(document.getElementById('doorCount').value) || 0;
+    const doorWidth = parseFloat(document.getElementById('doorWidth').value) || 0;
+    const doorHeight = parseFloat(document.getElementById('doorHeight').value) || 0;
+    const windowCount = parseInt(document.getElementById('windowCount').value) || 0;
+    const windowWidth = parseFloat(document.getElementById('windowWidth').value) || 0;
+    const windowHeight = parseFloat(document.getElementById('windowHeight').value) || 0;
+    
+    const grossWallArea = wallLength * wallHeight;
+    const doorArea = doorCount * doorWidth * doorHeight;
+    const windowArea = windowCount * windowWidth * windowHeight;
+    const netWallArea = grossWallArea - doorArea - windowArea;
+    
+    // Get cost values from form
+    const chbCost = parseFloat(document.getElementById('chbCost').value) || 25;
+    const cementCost = parseFloat(document.getElementById('cementCost').value) || 250;
+    const sandCost = parseFloat(document.getElementById('sandCost').value) || 800;
+    const rebarCost = parseFloat(document.getElementById('rebarCost').value) || 45;
+    
+    // Calculate quantities (simplified - you should use your actual calculation logic)
+    const chbQuantity = Math.ceil(netWallArea / 0.08);
+    const cementBags = Math.ceil(netWallArea * 0.5);
+    const sandVolume = netWallArea * 0.03;
+    const rebarWeight = Math.ceil(netWallArea * 2);
+    
+    // Calculate costs
+    const chbTotal = chbQuantity * chbCost;
+    const cementTotal = cementBags * cementCost;
+    const sandTotal = sandVolume * sandCost;
+    const rebarTotal = rebarWeight * rebarCost;
+    const materialSubtotal = chbTotal + cementTotal + sandTotal + rebarTotal;
+    
+    const wasteFactor = parseFloat(document.getElementById('wasteFactor').value) || 5;
+    const wasteAmount = materialSubtotal * (wasteFactor / 100);
+    const materialTotal = materialSubtotal + wasteAmount;
+    
+    // Labor costs (simplified)
+    const laborDays = netWallArea / 8;
+    const masonRate = parseFloat(document.getElementById('masonDailyRate').value) || 600;
+    const helperRate = parseFloat(document.getElementById('helperDailyRate').value) || 400;
+    const carpenterRate = parseFloat(document.getElementById('carpenterDailyRate').value) || 500;
+    
+    const masons = parseInt(document.getElementById('masons').value) || 2;
+    const helpers = parseInt(document.getElementById('helpers').value) || 2;
+    const carpenters = parseInt(document.getElementById('carpenters').value) || 1;
+    
+    const masonTotal = masons * masonRate * laborDays;
+    const helperTotal = helpers * helperRate * laborDays;
+    const carpenterTotal = carpenters * carpenterRate * laborDays;
+    const laborTotal = masonTotal + helperTotal + carpenterTotal;
+    
+    const materialsLaborTotal = materialTotal + laborTotal;
+    
+    const overhead = parseFloat(document.getElementById('overhead').value) || 15;
+    const overheadAmount = materialsLaborTotal * (overhead / 100);
+    
+    const profitMargin = parseFloat(document.getElementById('profitMargin').value) || 10;
+    const profitAmount = (materialsLaborTotal + overheadAmount) * (profitMargin / 100);
+    
+    const totalProjectCost = materialsLaborTotal + overheadAmount + profitAmount;
+    
+    // Return the actual calculated data
     return [
         ["Materials", "", "", "", ""],
-        ["CHB Blocks", "316", "pcs", "25.00", "7,900.00"],
-        ["Cement", "6", "bags", "250.00", "1,500.00"],
-        ["Sand", "1.51", "m³", "800.00", "1,211.04"],
-        ["Rebar (12mm)", "99", "kg", "45.00", "4,455.00"],
-        ["Materials Subtotal", "", "", "", "15,066.04"],
-        ["Waste (5%)", "", "", "", "753.30"],
-        ["Materials Total", "", "", "", "15,819.34"],
+        ["CHB Blocks", chbQuantity.toString(), "pcs", chbCost.toFixed(2), chbTotal.toFixed(2)],
+        ["Cement", cementBags.toString(), "bags", cementCost.toFixed(2), cementTotal.toFixed(2)],
+        ["Sand", sandVolume.toFixed(2), "m³", sandCost.toFixed(2), sandTotal.toFixed(2)],
+        ["Rebar", rebarWeight.toString(), "kg", rebarCost.toFixed(2), rebarTotal.toFixed(2)],
+        ["Materials Subtotal", "", "", "", materialSubtotal.toFixed(2)],
+        [`Waste (${wasteFactor}%)`, "", "", "", wasteAmount.toFixed(2)],
+        ["Materials Total", "", "", "", materialTotal.toFixed(2)],
         ["Labor", "", "", "", ""],
-        ["Mason", "2", "days", "600.00", "4,698.28"],
-        ["Helper", "2", "days", "400.00", "3,108.18"],
-        ["Carpenter", "1", "days", "500.00", "1,841.37"],
-        ["Labor Total", "", "", "", "9,706.83"],
+        ["Mason", masons.toString(), "days", masonRate.toFixed(2), masonTotal.toFixed(2)],
+        ["Helper", helpers.toString(), "days", helperRate.toFixed(2), helperTotal.toFixed(2)],
+        ["Carpenter", carpenters.toString(), "days", carpenterRate.toFixed(2), carpenterTotal.toFixed(2)],
+        ["Labor Total", "", "", "", laborTotal.toFixed(2)],
         ["Summary", "", "", "", ""],
-        ["Materials + Labor", "", "", "", "25,526.17"],
-        ["Overhead", "", "", "", "3,828.93"],
-        ["Profit Margin", "", "", "", "2,935.51"],
-        ["TOTAL PROJECT COST", "", "", "", "32,290.61"]
+        ["Materials + Labor", "", "", "", materialsLaborTotal.toFixed(2)],
+        ["Overhead", "", "", "", overheadAmount.toFixed(2)],
+        ["Profit Margin", "", "", "", profitAmount.toFixed(2)],
+        ["TOTAL PROJECT COST", "", "", "", totalProjectCost.toFixed(2)]
     ];
 }
 
