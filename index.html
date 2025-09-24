@@ -1048,6 +1048,12 @@
                             </div>
                             
                             <div class="formula-box">
+                                <div class="formula-title">Plaster Calculation</div>
+                                <span class="formula">Plaster Volume = (Net Wall Area × Sides × Thickness) + (Opening Perimeter × Reveal Width × Thickness)</span>
+                                <p>Accounts for both main wall surface and opening reveals</p>
+                            </div>
+                            
+                            <div class="formula-box">
                                 <div class="formula-title">Labor Calculation</div>
                                 <span class="formula">Labor Days = Net Wall Area / (Productivity Rate × Weather Factor × Crew Skill × Site Access)</span>
                                 <p>Adjusted for various productivity factors</p>
@@ -1480,7 +1486,6 @@
             const chbQuantity = Math.ceil(netWallArea / chbArea);
             
             // Calculate mortar volume based on CHB thickness and net area
-            // More accurate formula considering CHB thickness and joint size
             const mortarVolume = netWallArea * chbSize * 0.25; // 25% of volume is mortar
             
             // Get mortar ratio and cement factor
@@ -1494,16 +1499,16 @@
             const sandMortar = mortarVolume * (sandPart / totalParts);
             
             // Calculate reinforcement
-            const verticalSpacing = parseFloat(document.getElementById('rebarVertSpacing').value) / 1000; // Convert to meters
+            const verticalSpacing = parseFloat(document.getElementById('rebarVertSpacing').value) / 1000;
             const horizontalLayers = parseInt(document.getElementById('rebarHorizSpacing').value);
             const rebarDiameter = parseInt(document.getElementById('rebarDiameter').value);
-            const lapLengthVal = parseFloat(document.getElementById('lapLength').value) / 1000; // Convert to meters
+            const lapLengthVal = parseFloat(document.getElementById('lapLength').value) / 1000;
             
             // Calculate number of vertical bars
             const verticalBarsCount = Math.ceil(wallLength / verticalSpacing) + 1;
             const verticalRebarLength = verticalBarsCount * (wallHeight + lapLengthVal);
             
-            // Calculate number of horizontal bars (every 3 layers typically, each CHB layer is 0.2m)
+            // Calculate number of horizontal bars
             const chbLayers = Math.ceil(wallHeight / 0.2);
             const horizontalBarsCount = Math.ceil(chbLayers / horizontalLayers);
             const horizontalRebarLength = horizontalBarsCount * (wallLength + lapLengthVal);
@@ -1515,30 +1520,27 @@
             const includeDowelBars = document.getElementById('dowelBars').checked;
             
             if (includeCornerBars) {
-                // Add corner bars (estimate 2m per corner, assuming 4 corners)
                 additionalRebarLength += 4 * 2;
             }
             
             if (includeLintelBars) {
-                // Add lintel bars above openings (estimate door width + 0.5m each side per opening)
                 additionalRebarLength += doorCount * (doorWidth + 1) + windowCount * (windowWidth + 1);
             }
             
             if (includeDowelBars) {
-                // Add dowel bars (estimate 0.5m per dowel, one per vertical bar)
                 additionalRebarLength += verticalBarsCount * 0.5;
             }
             
             // Total rebar length with lap splices and hooks if included
             const includeLaps = document.getElementById('includeLaps').checked;
-            const lapFactor = includeLaps ? 1.1 : 1.0; // 10% additional for laps and hooks
+            const lapFactor = includeLaps ? 1.1 : 1.0;
             
             const totalRebarLength = (verticalRebarLength + horizontalRebarLength + additionalRebarLength) * lapFactor;
             
             // Calculate rebar weight (kg) - using formula: (d²/162) * length
             const rebarWeight = Math.ceil((rebarDiameter * rebarDiameter / 162) * totalRebarLength);
             
-            // Calculate plaster materials if included
+            // Calculate plaster materials if included - CORRECTED VERSION
             let plasterCementBags = 0;
             let plasterSand = 0;
             const includePlaster = document.getElementById('plastering').checked;
@@ -1546,8 +1548,18 @@
             const plasterCementFactor = parseFloat(document.getElementById('plasterCementFactor').value);
             
             if (includePlaster) {
-                const plasterThickness = parseFloat(document.getElementById('plasterThickness').value) / 1000; // Convert to meters
-                const plasterVolume = netWallArea * plasterSides * plasterThickness;
+                const plasterThickness = parseFloat(document.getElementById('plasterThickness').value) / 1000;
+                
+                // Main wall plaster (exclude openings - CORRECT)
+                let plasterVolume = netWallArea * plasterSides * plasterThickness;
+                
+                // Add plaster on reveals (sides of openings) - THIS WAS MISSING
+                const doorRevealLength = doorCount * 2 * (doorWidth + doorHeight);
+                const windowRevealLength = windowCount * 2 * (windowWidth + windowHeight);
+                const revealWidth = 0.1; // Standard 100mm reveal width
+                const revealPlasterVolume = (doorRevealLength + windowRevealLength) * revealWidth * plasterThickness;
+                
+                plasterVolume += revealPlasterVolume;
                 
                 const plasterRatio = document.getElementById('plasterRatio').value;
                 const [pCementPart, pSandPart] = plasterRatio.split(':').map(Number);
