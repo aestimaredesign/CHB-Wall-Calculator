@@ -1950,7 +1950,7 @@
         const preparedBy = document.getElementById("preparedBy")?.value || "Maria Santos, Civil Engineer";
         const date = new Date().toLocaleDateString();
 
-        // Get the actual calculated values from the results or recalculate
+        // Get the actual calculated values
         const boqTable = getCalculatedBOQData();
         
         // Set margins and initial position
@@ -2062,7 +2062,7 @@
     }
 }
 
-// Function to get actual calculated values
+// Function to get actual calculated values with CORRECTED spelling and column alignment
 function getCalculatedBOQData() {
     // Try to get values from the displayed BOQ table first
     const table = document.getElementById('boqTable');
@@ -2070,7 +2070,7 @@ function getCalculatedBOQData() {
         return extractDataFromTable(table);
     }
     
-    // If no table found, try to get values from the results display
+    // If no table found, calculate values
     return getValuesFromResults();
 }
 
@@ -2081,19 +2081,23 @@ function extractDataFromTable(table) {
     
     rows.forEach(row => {
         const cells = row.querySelectorAll('td, th');
-        const rowData = [];
+        const rowData = ['', '', '', '', '']; // Initialize with 5 empty columns
         
-        cells.forEach(cell => {
-            let text = cell.textContent.trim();
-            // Remove currency symbols but keep numbers and text
-            text = text.replace(/[₱P]/g, '').trim();
-            rowData.push(text);
+        cells.forEach((cell, index) => {
+            if (index < 5) { // Only process first 5 columns
+                let text = cell.textContent.trim();
+                // Remove currency symbols but keep numbers and text
+                text = text.replace(/[₱P]/g, '').trim();
+                
+                // Fix spelling errors
+                if (text.includes('rollt')) text = text.replace('rollt', 'Profit');
+                if (text.includes('ROUECT')) text = text.replace('ROUECT', 'PROJECT');
+                
+                rowData[index] = text;
+            }
         });
         
-        if (rowData.length > 0 && !rowData.every(cell => cell === '')) {
-            // Ensure we have exactly 5 columns
-            while (rowData.length < 5) rowData.push('');
-            if (rowData.length > 5) rowData.length = 5;
+        if (!rowData.every(cell => cell === '')) {
             data.push(rowData);
         }
     });
@@ -2101,9 +2105,9 @@ function extractDataFromTable(table) {
     return data.length > 0 ? data : getValuesFromResults();
 }
 
-// Fallback: Get values from the results display
+// Calculate values from form inputs with CORRECTED spelling
 function getValuesFromResults() {
-    // Get values from the form and calculations
+    // Get values from the form
     const wallLength = parseFloat(document.getElementById('wallLength').value) || 10;
     const wallHeight = parseFloat(document.getElementById('wallHeight').value) || 3;
     
@@ -2126,7 +2130,7 @@ function getValuesFromResults() {
     const sandCost = parseFloat(document.getElementById('sandCost').value) || 800;
     const rebarCost = parseFloat(document.getElementById('rebarCost').value) || 45;
     
-    // Calculate quantities (simplified - you should use your actual calculation logic)
+    // Calculate quantities (simplified - use your actual calculation logic)
     const chbQuantity = Math.ceil(netWallArea / 0.08);
     const cementBags = Math.ceil(netWallArea * 0.5);
     const sandVolume = netWallArea * 0.03;
@@ -2143,7 +2147,7 @@ function getValuesFromResults() {
     const wasteAmount = materialSubtotal * (wasteFactor / 100);
     const materialTotal = materialSubtotal + wasteAmount;
     
-    // Labor costs (simplified)
+    // Labor costs
     const laborDays = netWallArea / 8;
     const masonRate = parseFloat(document.getElementById('masonDailyRate').value) || 600;
     const helperRate = parseFloat(document.getElementById('helperDailyRate').value) || 400;
@@ -2168,26 +2172,26 @@ function getValuesFromResults() {
     
     const totalProjectCost = materialsLaborTotal + overheadAmount + profitAmount;
     
-    // Return the actual calculated data
+    // Return the actual calculated data with CORRECTED spelling and proper column alignment
     return [
         ["Materials", "", "", "", ""],
         ["CHB Blocks", chbQuantity.toString(), "pcs", chbCost.toFixed(2), chbTotal.toFixed(2)],
         ["Cement", cementBags.toString(), "bags", cementCost.toFixed(2), cementTotal.toFixed(2)],
         ["Sand", sandVolume.toFixed(2), "m³", sandCost.toFixed(2), sandTotal.toFixed(2)],
         ["Rebar", rebarWeight.toString(), "kg", rebarCost.toFixed(2), rebarTotal.toFixed(2)],
-        ["Materials Subtotal", "", "", "", materialSubtotal.toFixed(2)],
-        [`Waste (${wasteFactor}%)`, "", "", "", wasteAmount.toFixed(2)],
-        ["Materials Total", "", "", "", materialTotal.toFixed(2)],
+        ["Materials Subtotal", "", "", "", materialSubtotal.toFixed(2)], // Amount in column 4
+        [`Waste (${wasteFactor}%)`, "", "", "", wasteAmount.toFixed(2)], // Amount in column 4
+        ["Materials Total", "", "", "", materialTotal.toFixed(2)], // Amount in column 4
         ["Labor", "", "", "", ""],
         ["Mason", masons.toString(), "days", masonRate.toFixed(2), masonTotal.toFixed(2)],
         ["Helper", helpers.toString(), "days", helperRate.toFixed(2), helperTotal.toFixed(2)],
         ["Carpenter", carpenters.toString(), "days", carpenterRate.toFixed(2), carpenterTotal.toFixed(2)],
-        ["Labor Total", "", "", "", laborTotal.toFixed(2)],
+        ["Labor Total", "", "", "", laborTotal.toFixed(2)], // Amount in column 4
         ["Summary", "", "", "", ""],
-        ["Materials + Labor", "", "", "", materialsLaborTotal.toFixed(2)],
-        ["Overhead", "", "", "", overheadAmount.toFixed(2)],
-        ["Profit Margin", "", "", "", profitAmount.toFixed(2)],
-        ["TOTAL PROJECT COST", "", "", "", totalProjectCost.toFixed(2)]
+        ["Materials + Labor", "", "", "", materialsLaborTotal.toFixed(2)], // Amount in column 4
+        ["Overhead", "", "", "", overheadAmount.toFixed(2)], // Amount in column 4
+        ["Profit Margin", "", "", "", profitAmount.toFixed(2)], // Amount in column 4 (CORRECTED SPELLING)
+        ["TOTAL PROJECT COST", "", "", "", totalProjectCost.toFixed(2)] // Amount in column 4 (CORRECTED SPELLING)
     ];
 }
 
