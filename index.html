@@ -2062,7 +2062,7 @@
     }
 }
 
-// Extract data directly from the displayed BOQ table with CORRECTED structure
+// Extract data directly from the displayed BOQ table with CORRECTED spelling
 function extractBOQDataFromDisplay() {
     const table = document.getElementById('boqTable');
     if (!table) {
@@ -2083,10 +2083,19 @@ function extractBOQDataFromDisplay() {
                 // Remove currency symbols but keep numbers and text
                 text = text.replace(/[₱P,]/g, '').trim();
                 
-                // Fix spelling errors
-                if (text.includes('rollt')) text = 'Profit Margin';
-                if (text.includes('ROUECT')) text = 'TOTAL PROJECT COST';
-                if (text.includes('ROUECT')) text = 'TOTAL PROJECT COST';
+                // FIX SPELLING ERRORS
+                if (text.includes('rofit') || text.includes('Rollt') || text.includes('rollt')) {
+                    text = 'Profit Margin';
+                }
+                if (text.includes('ROJECT') || text.includes('ROUECT') || text.includes('ROECT')) {
+                    text = 'TOTAL PROJECT COST';
+                }
+                if (text === 'TOTAL ROJECT COST') {
+                    text = 'TOTAL PROJECT COST';
+                }
+                if (text === 'rofit Margin') {
+                    text = 'Profit Margin';
+                }
                 
                 rowData[index] = text;
             }
@@ -2130,26 +2139,25 @@ function extractBOQDataFromDisplay() {
 
 // Fallback data with CORRECTED spelling and structure
 function getFallbackData() {
-    // This is just a fallback - it should use your actual calculated values
     return [
         ["Materials", "", "", "", ""],
         ["CHB Blocks", "316", "pcs", "25.00", "7900.00"],
         ["Cement", "6", "bags", "250.00", "1500.00"],
         ["Sand", "1.51", "m³", "800.00", "1211.04"],
         ["Rebar (12mm)", "99", "kg", "45.00", "4455.00"],
-        ["Materials Subtotal", "", "", "", "15066.04"], // Amount ONLY in column 4
-        ["Waste (5%)", "", "", "", "753.30"], // Amount ONLY in column 4
-        ["Materials Total", "", "", "", "15819.34"], // Amount ONLY in column 4
+        ["Materials Subtotal", "", "", "", "15066.04"],
+        ["Waste (5%)", "", "", "", "753.30"],
+        ["Materials Total", "", "", "", "15819.34"],
         ["Labor", "", "", "", ""],
         ["Mason", "2", "days", "600.00", "4698.28"],
         ["Helper", "2", "days", "400.00", "3108.18"],
         ["Carpenter", "1", "days", "500.00", "1841.37"],
-        ["Labor Total", "", "", "", "9706.83"], // Amount ONLY in column 4
+        ["Labor Total", "", "", "", "9706.83"],
         ["Summary", "", "", "", ""],
-        ["Materials + Labor", "", "", "", "25526.17"], // Amount ONLY in column 4
-        ["Overhead", "", "", "", "3828.93"], // Amount ONLY in column 4
-        ["Profit Margin", "", "", "", "2935.51"], // Amount ONLY in column 4 - CORRECTED SPELLING
-        ["TOTAL PROJECT COST", "", "", "", "32290.61"] // Amount ONLY in column 4 - CORRECTED SPELLING
+        ["Materials + Labor", "", "", "", "25526.17"],
+        ["Overhead", "", "", "", "3828.93"],
+        ["Profit Margin", "", "", "", "2935.51"], // CORRECTED SPELLING
+        ["TOTAL PROJECT COST", "", "", "", "32290.61"] // CORRECTED SPELLING
     ];
 }
 
