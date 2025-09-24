@@ -1998,128 +1998,133 @@
         }
         
         function generatePDF() {
-            try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
 
-                // Get project information
-                const projectName = document.getElementById("projectName")?.value || "Residential Boundary Wall";
-                const clientName = document.getElementById("clientName")?.value || "John Dela Cruz";
-                const projectLocation = document.getElementById("projectLocation")?.value || "Manila, Philippines";
-                const preparedBy = document.getElementById("preparedBy")?.value || "Maria Santos, Civil Engineer";
-                const date = new Date().toLocaleDateString();
+        // Get project information
+        const projectName = document.getElementById("projectName")?.value || "Residential Boundary Wall";
+        const clientName = document.getElementById("clientName")?.value || "John Dela Cruz";
+        const projectLocation = document.getElementById("projectLocation")?.value || "Manila, Philippines";
+        const preparedBy = document.getElementById("preparedBy")?.value || "Maria Santos, Civil Engineer";
+        const date = new Date().toLocaleDateString();
 
-                // Get the actual calculated values from the displayed BOQ table
-                const boqTable = extractBOQDataFromDisplay();
+        // Get the actual calculated values from the displayed BOQ table
+        const boqTable = extractBOQDataFromDisplay();
+        
+        // Remove the header row from the table data since we'll add it manually in autoTable
+        const tableBody = boqTable.filter(row => 
+            !(row[0] === 'Description' && row[1] === 'Quantity' && row[2] === 'Unit' && row[3] === 'Unit Rate' && row[4] === 'Amount')
+        );
+
+        // Set margins and initial position
+        const margin = 15;
+        let y = margin;
+
+        // Add header information
+        doc.setFontSize(18);
+        doc.setFont("helvetica", "bold");
+        doc.text("CHB Wall Estimation Report", margin, y);
+        y += 10;
+
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Project: ${projectName}`, margin, y);
+        doc.text(`Client: ${clientName}`, 100, y);
+        y += 5;
+        doc.text(`Location: ${projectLocation}`, margin, y);
+        doc.text(`Date: ${date}`, 100, y);
+        y += 5;
+        doc.text(`Prepared by: ${preparedBy}`, margin, y);
+        y += 10;
+
+        // Add wall dimensions summary
+        const wallLength = document.getElementById('wallLength').value || '10';
+        const wallHeight = document.getElementById('wallHeight').value || '3';
+        const netWallArea = document.querySelector('#results p strong')?.textContent?.match(/\d+\.\d+/)?.[0] || '0';
+        
+        doc.setFontSize(11);
+        doc.text(`Wall Dimensions: ${wallLength}m × ${wallHeight}m`, margin, y);
+        y += 5;
+        doc.text(`Net Wall Area: ${netWallArea} m²`, margin, y);
+        y += 10;
+        
+        // Add Bill of Quantities title
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("Bill of Quantities", margin, y);
+        y += 8;
+
+        // Configure and draw the table - ONLY use body data, header is defined separately
+        doc.autoTable({
+            head: [["Description", "Quantity", "Unit", "Unit Rate", "Amount"]],
+            body: tableBody,
+            startY: y,
+            theme: "grid",
+            styles: {
+                fontSize: 8,
+                cellPadding: 3,
+                valign: "middle",
+                lineColor: [0, 0, 0],
+                lineWidth: 0.1
+            },
+            columnStyles: {
+                0: { halign: "left", cellWidth: 70 },
+                1: { halign: "center", cellWidth: 25 },
+                2: { halign: "center", cellWidth: 20 },
+                3: { halign: "right", cellWidth: 30 },
+                4: { halign: "right", cellWidth: 35 }
+            },
+            headStyles: {
+                fillColor: [220, 220, 220],
+                textColor: 0,
+                fontStyle: "bold",
+                lineWidth: 0.1
+            },
+            alternateRowStyles: {
+                fillColor: [245, 245, 245]
+            },
+            didParseCell: function(data) {
+                const cellValue = (data.cell.raw || "").toString();
                 
-                // Set margins and initial position
-                const margin = 15;
-                let y = margin;
-
-                // Add header information
-                doc.setFontSize(18);
-                doc.setFont("helvetica", "bold");
-                doc.text("CHB Wall Estimation Report", margin, y);
-                y += 10;
-
-                doc.setFontSize(10);
-                doc.setFont("helvetica", "normal");
-                doc.text(`Project: ${projectName}`, margin, y);
-                doc.text(`Client: ${clientName}`, 100, y);
-                y += 5;
-                doc.text(`Location: ${projectLocation}`, margin, y);
-                doc.text(`Date: ${date}`, 100, y);
-                y += 5;
-                doc.text(`Prepared by: ${preparedBy}`, margin, y);
-                y += 10;
-
-                // Add wall dimensions summary
-                const wallLength = document.getElementById('wallLength').value || '10';
-                const wallHeight = document.getElementById('wallHeight').value || '3';
-                const netWallArea = document.querySelector('#results p strong')?.textContent?.match(/\d+\.\d+/)?.[0] || '0';
+                // Style section headers
+                if (cellValue === "Materials" || cellValue === "Labor" || cellValue === "Summary") {
+                    data.cell.styles.fillColor = [224, 224, 224];
+                    data.cell.styles.fontStyle = 'bold';
+                    data.cell.styles.halign = 'left';
+                    data.cell.colSpan = 5;
+                }
                 
-                doc.setFontSize(11);
-                doc.text(`Wall Dimensions: ${wallLength}m × ${wallHeight}m`, margin, y);
-                y += 5;
-                doc.text(`Net Wall Area: ${netWallArea} m²`, margin, y);
-                y += 10;
+                // Style totals and subtotals
+                if (cellValue.includes("Subtotal") || cellValue.includes("Total") || cellValue.includes("TOTAL") || 
+                    cellValue.includes("Overhead") || cellValue.includes("Profit Margin") || 
+                    cellValue.includes("Materials + Labor") || cellValue.includes("Waste")) {
+                    data.cell.styles.fontStyle = 'bold';
+                }
                 
-                // Add Bill of Quantities title
-                doc.setFontSize(14);
-                doc.setFont("helvetica", "bold");
-                doc.text("Bill of Quantities", margin, y);
-                y += 8;
+                // Style the grand total row
+                if (cellValue.includes("TOTAL PROJECT COST")) {
+                    data.cell.styles.fillColor = [200, 200, 200];
+                    data.cell.styles.fontStyle = 'bold';
+                }
+            },
+            didDrawPage: function(data) {
+                doc.setFontSize(8);
+                doc.setTextColor(100);
+                doc.text(`Page ${data.pageNumber}`, 
+                    doc.internal.pageSize.width - 15, 
+                    doc.internal.pageSize.height - 10);
+            },
+            margin: { top: y, left: margin, right: margin }
+        });
 
-                // Configure and draw the table
-                doc.autoTable({
-                    head: [["Description", "Quantity", "Unit", "Unit Rate", "Amount"]],
-                    body: boqTable,
-                    startY: y,
-                    theme: "grid",
-                    styles: {
-                        fontSize: 8,
-                        cellPadding: 3,
-                        valign: "middle",
-                        lineColor: [0, 0, 0],
-                        lineWidth: 0.1
-                    },
-                    columnStyles: {
-                        0: { halign: "left", cellWidth: 70 },
-                        1: { halign: "center", cellWidth: 25 },
-                        2: { halign: "center", cellWidth: 20 },
-                        3: { halign: "right", cellWidth: 30 },
-                        4: { halign: "right", cellWidth: 35 }
-                    },
-                    headStyles: {
-                        fillColor: [220, 220, 220],
-                        textColor: 0,
-                        fontStyle: "bold",
-                        lineWidth: 0.1
-                    },
-                    alternateRowStyles: {
-                        fillColor: [245, 245, 245]
-                    },
-                    didParseCell: function(data) {
-                        const cellValue = (data.cell.raw || "").toString();
-                        
-                        // Style section headers
-                        if (cellValue === "Materials" || cellValue === "Labor" || cellValue === "Summary") {
-                            data.cell.styles.fillColor = [224, 224, 224];
-                            data.cell.styles.fontStyle = 'bold';
-                            data.cell.styles.halign = 'left';
-                            data.cell.colSpan = 5;
-                        }
-                        
-                        // Style totals and subtotals
-                        if (cellValue.includes("Subtotal") || cellValue.includes("Total") || cellValue.includes("TOTAL") || 
-                            cellValue.includes("Overhead") || cellValue.includes("Profit Margin") || 
-                            cellValue.includes("Materials + Labor") || cellValue.includes("Waste")) {
-                            data.cell.styles.fontStyle = 'bold';
-                        }
-                        
-                        // Style the grand total row
-                        if (cellValue.includes("TOTAL PROJECT COST")) {
-                            data.cell.styles.fillColor = [200, 200, 200];
-                            data.cell.styles.fontStyle = 'bold';
-                        }
-                    },
-                    didDrawPage: function(data) {
-                        doc.setFontSize(8);
-                        doc.setTextColor(100);
-                        doc.text(`Page ${data.pageNumber}`, 
-                            doc.internal.pageSize.width - 15, 
-                            doc.internal.pageSize.height - 10);
-                    },
-                    margin: { top: y, left: margin, right: margin }
-                });
-
-                // Save the PDF
-                doc.save("CHB_Wall_Estimate.pdf");
-            } catch (error) {
-                alert("Error generating PDF: " + error.message);
-                console.error(error);
-            }
-        }
+        // Save the PDF
+        doc.save("CHB_Wall_Estimate.pdf");
+    } catch (error) {
+        alert("Error generating PDF: " + error.message);
+        console.error(error);
+    }
+}
 
         // Extract data directly from the displayed BOQ table with CORRECTED spelling
 function extractBOQDataFromDisplay() {
