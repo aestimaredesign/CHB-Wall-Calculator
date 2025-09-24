@@ -2122,79 +2122,97 @@
         }
 
         // Extract data directly from the displayed BOQ table with CORRECTED spelling
-        function extractBOQDataFromDisplay() {
-            const table = document.getElementById('boqTable');
-            if (!table) {
-                return getFallbackData();
+function extractBOQDataFromDisplay() {
+    const table = document.getElementById('boqTable');
+    if (!table) {
+        return getFallbackData();
+    }
+    
+    const rows = table.querySelectorAll('tr');
+    const data = [];
+    let isFirstHeaderRow = true; // Flag to track if we've already added the header
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td, th');
+        const rowData = ['', '', '', '', '']; // Initialize with 5 empty columns
+        
+        cells.forEach((cell, index) => {
+            if (index < 5) {
+                let text = cell.textContent.trim();
+                
+                // Remove currency symbols but keep numbers and text
+                text = text.replace(/[₱P,]/g, '').trim();
+                
+                // FIX SPELLING ERRORS
+                if (text.includes('rofit') || text.includes('Rollt') || text.includes('rollt')) {
+                    text = 'Profit Margin';
+                }
+                if (text.includes('ROJECT') || text.includes('ROUECT') || text.includes('ROECT')) {
+                    text = 'TOTAL PROJECT COST';
+                }
+                if (text === 'TOTAL ROJECT COST') {
+                    text = 'TOTAL PROJECT COST';
+                }
+                if (text === 'rofit Margin') {
+                    text = 'Profit Margin';
+                }
+                
+                rowData[index] = text;
+            }
+        });
+        
+        // Skip the second header row (the one with "Description, Quantity, Unit, Unit Rate, Amount")
+        const isHeaderRow = rowData[0] === 'Description' && 
+                           rowData[1] === 'Quantity' && 
+                           rowData[2] === 'Unit' && 
+                           rowData[3] === 'Unit Rate' && 
+                           rowData[4] === 'Amount';
+        
+        if (isHeaderRow) {
+            if (isFirstHeaderRow) {
+                // Add only the first header row
+                data.push(rowData);
+                isFirstHeaderRow = false;
+            }
+            // Skip any subsequent header rows
+            return;
+        }
+        
+        // Fix the structure for summary rows - ensure amounts are only in column 4
+        if (rowData[0].includes("Materials Subtotal") || 
+            rowData[0].includes("Waste") || 
+            rowData[0].includes("Materials Total") || 
+            rowData[0].includes("Labor Total") || 
+            rowData[0].includes("Materials + Labor") || 
+            rowData[0].includes("Overhead") || 
+            rowData[0].includes("Profit Margin") || 
+            rowData[0].includes("TOTAL PROJECT COST")) {
+            
+            // If amount is wrongly placed in quantity column (column 1), move it to amount column (column 4)
+            if (rowData[1] && rowData[1].match(/[\d.,]/) && !rowData[4]) {
+                rowData[4] = rowData[1]; // Move amount from column 1 to column 4
+                rowData[1] = ''; // Clear column 1
             }
             
-            const rows = table.querySelectorAll('tr');
-            const data = [];
+            // If amount is wrongly placed in unit rate column (column 3), move it to amount column (column 4)
+            if (rowData[3] && rowData[3].match(/[\d.,]/) && !rowData[4]) {
+                rowData[4] = rowData[3]; // Move amount from column 3 to column 4
+                rowData[3] = ''; // Clear column 3
+            }
             
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td, th');
-                const rowData = ['', '', '', '', '']; // Initialize with 5 empty columns
-                
-                cells.forEach((cell, index) => {
-                    if (index < 5) {
-                        let text = cell.textContent.trim();
-                        
-                        // Remove currency symbols but keep numbers and text
-                        text = text.replace(/[₱P,]/g, '').trim();
-                        
-                        // FIX SPELLING ERRORS
-                        if (text.includes('rofit') || text.includes('Rollt') || text.includes('rollt')) {
-                            text = 'Profit Margin';
-                        }
-                        if (text.includes('ROJECT') || text.includes('ROUECT') || text.includes('ROECT')) {
-                            text = 'TOTAL PROJECT COST';
-                        }
-                        if (text === 'TOTAL ROJECT COST') {
-                            text = 'TOTAL PROJECT COST';
-                        }
-                        if (text === 'rofit Margin') {
-                            text = 'Profit Margin';
-                        }
-                        
-                        rowData[index] = text;
-                    }
-                });
-                
-                // Fix the structure for summary rows - ensure amounts are only in column 4
-                if (rowData[0].includes("Materials Subtotal") || 
-                    rowData[0].includes("Waste") || 
-                    rowData[0].includes("Materials Total") || 
-                    rowData[0].includes("Labor Total") || 
-                    rowData[0].includes("Materials + Labor") || 
-                    rowData[0].includes("Overhead") || 
-                    rowData[0].includes("Profit Margin") || 
-                    rowData[0].includes("TOTAL PROJECT COST")) {
-                    
-                    // If amount is wrongly placed in quantity column (column 1), move it to amount column (column 4)
-                    if (rowData[1] && rowData[1].match(/[\d.,]/) && !rowData[4]) {
-                        rowData[4] = rowData[1]; // Move amount from column 1 to column 4
-                        rowData[1] = ''; // Clear column 1
-                    }
-                    
-                    // If amount is wrongly placed in unit rate column (column 3), move it to amount column (column 4)
-                    if (rowData[3] && rowData[3].match(/[\d.,]/) && !rowData[4]) {
-                        rowData[4] = rowData[3]; // Move amount from column 3 to column 4
-                        rowData[3] = ''; // Clear column 3
-                    }
-                    
-                    // Ensure columns 1, 2, 3 are empty for summary rows
-                    rowData[1] = ''; // Quantity column
-                    rowData[2] = ''; // Unit column  
-                    rowData[3] = ''; // Unit Rate column
-                }
-                
-                if (!rowData.every(cell => cell === '')) {
-                    data.push(rowData);
-                }
-            });
-            
-            return data.length > 0 ? data : getFallbackData();
+            // Ensure columns 1, 2, 3 are empty for summary rows
+            rowData[1] = ''; // Quantity column
+            rowData[2] = ''; // Unit column  
+            rowData[3] = ''; // Unit Rate column
         }
+        
+        if (!rowData.every(cell => cell === '')) {
+            data.push(rowData);
+        }
+    });
+    
+    return data.length > 0 ? data : getFallbackData();
+}
 
         // Fallback data with CORRECTED spelling and structure
         function getFallbackData() {
