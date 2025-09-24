@@ -534,6 +534,36 @@
             background-color: #e0e0e0 !important;
             font-weight: bold !important;
         }
+        
+        .standards-reference {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            border-left: 4px solid #3498db;
+        }
+        
+        .standards-reference h4 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .standards-reference ul {
+            padding-left: 20px;
+        }
+        
+        .standards-reference li {
+            margin-bottom: 5px;
+        }
+        
+        .disclaimer {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -541,6 +571,10 @@
         <header>
             <h1>CHB Wall Estimation Calculator</h1>
             <p>Compliant with NSCP, ACI, ASTM, and Eurocode standards</p>
+            <div class="disclaimer">
+                <strong>Note:</strong> This calculator uses practical approximations based on NSCP/ACI standards. 
+                For formal design, consult the actual code provisions and a licensed structural engineer.
+            </div>
         </header>
         
         <div class="left-column">
@@ -930,6 +964,17 @@
                     
                     <div class="tab-content" id="help-tab">
                         <div class="help-section">
+                            <div class="standards-reference">
+                                <h4>Standards References</h4>
+                                <ul>
+                                    <li><strong>NSCP 2015:</strong> Section 418.7.3 - Lap splices</li>
+                                    <li><strong>ACI 318-19:</strong> Chapter 25 - Splices and development length</li>
+                                    <li><strong>ASTM C270:</strong> Standard specification for mortar</li>
+                                    <li><strong>Eurocode 2:</strong> EN 1992-1-1 - Concrete structures</li>
+                                    <li><strong>DPWH Blue Book:</strong> Standard specifications</li>
+                                </ul>
+                            </div>
+                            
                             <h3>Adjustment Factors Explained</h3>
                             
                             <div class="adjustment-factor">
@@ -1146,24 +1191,26 @@
                 const plasterMix = plasterRatio.value;
                 
                 // Set cement factors based on standard and mix ratio
-                let mortarCementValue = 9; // Default for 1:4 mix
-                let plasterCementValue = 12; // Default for 1:3 plaster
+                let mortarCementValue = 9.0; // Default for 1:4 mix
+                let plasterCementValue = 12.0; // Default for 1:3 plaster
                 
-                // Adjust based on mix ratio
-                if (mortarMix === '1:3') mortarCementValue = 10.5;
-                if (mortarMix === '1:5') mortarCementValue = 8;
-                if (mortarMix === '1:6') mortarCementValue = 7;
+                // Adjust based on mix ratio (refined values based on practical experience)
+                if (mortarMix === '1:3') mortarCementValue = 10.8;    // Rich
+                if (mortarMix === '1:4') mortarCementValue = 9.0;     // Standard
+                if (mortarMix === '1:5') mortarCementValue = 7.8;     // Economy
+                if (mortarMix === '1:6') mortarCementValue = 6.8;     // Lean
                 
-                if (plasterMix === '1:2') plasterCementValue = 14;
-                if (plasterMix === '1:4') plasterCementValue = 10;
+                if (plasterMix === '1:2') plasterCementValue = 14.0;  // Rich
+                if (plasterMix === '1:3') plasterCementValue = 12.0;  // Standard
+                if (plasterMix === '1:4') plasterCementValue = 10.0;  // Economy
                 
-                // Adjust based on standard
+                // Minimal adjustment based on standard
                 if (selectedStandard === 'aci') {
-                    mortarCementValue *= 1.05; // ACI typically requires slightly more cement
-                    plasterCementValue *= 1.05;
+                    mortarCementValue *= 1.02; // ACI typically requires slightly more cement
+                    plasterCementValue *= 1.02;
                 } else if (selectedStandard === 'eurocode') {
-                    mortarCementValue *= 0.95; // Eurocode may allow slightly less cement
-                    plasterCementValue *= 0.95;
+                    mortarCementValue *= 1.01; // Eurocode may allow optimization
+                    plasterCementValue *= 1.01;
                 }
                 
                 cementFactor.value = mortarCementValue.toFixed(1);
@@ -1939,234 +1986,227 @@
         }
         
         function generatePDF() {
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
 
-        // Get project information
-        const projectName = document.getElementById("projectName")?.value || "Residential Boundary Wall";
-        const clientName = document.getElementById("clientName")?.value || "John Dela Cruz";
-        const projectLocation = document.getElementById("projectLocation")?.value || "Manila, Philippines";
-        const preparedBy = document.getElementById("preparedBy")?.value || "Maria Santos, Civil Engineer";
-        const date = new Date().toLocaleDateString();
+                // Get project information
+                const projectName = document.getElementById("projectName")?.value || "Residential Boundary Wall";
+                const clientName = document.getElementById("clientName")?.value || "John Dela Cruz";
+                const projectLocation = document.getElementById("projectLocation")?.value || "Manila, Philippines";
+                const preparedBy = document.getElementById("preparedBy")?.value || "Maria Santos, Civil Engineer";
+                const date = new Date().toLocaleDateString();
 
-        // Get the actual calculated values from the displayed BOQ table
-        const boqTable = extractBOQDataFromDisplay();
-        
-        // Set margins and initial position
-        const margin = 15;
-        let y = margin;
-
-        // Add header information
-        doc.setFontSize(18);
-        doc.setFont("helvetica", "bold");
-        doc.text("CHB Wall Estimation Report", margin, y);
-        y += 10;
-
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.text(`Project: ${projectName}`, margin, y);
-        doc.text(`Client: ${clientName}`, 100, y);
-        y += 5;
-        doc.text(`Location: ${projectLocation}`, margin, y);
-        doc.text(`Date: ${date}`, 100, y);
-        y += 5;
-        doc.text(`Prepared by: ${preparedBy}`, margin, y);
-        y += 10;
-
-        // Add wall dimensions summary
-        const wallLength = document.getElementById('wallLength').value || '10';
-        const wallHeight = document.getElementById('wallHeight').value || '3';
-        const netWallArea = document.querySelector('#results p strong')?.textContent?.match(/\d+\.\d+/)?.[0] || '0';
-        
-        doc.setFontSize(11);
-        doc.text(`Wall Dimensions: ${wallLength}m × ${wallHeight}m`, margin, y);
-        y += 5;
-        doc.text(`Net Wall Area: ${netWallArea} m²`, margin, y);
-        y += 10;
-        
-        // Add Bill of Quantities title
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.text("Bill of Quantities", margin, y);
-        y += 8;
-
-        // Configure and draw the table
-        doc.autoTable({
-            head: [["Description", "Quantity", "Unit", "Unit Rate", "Amount"]],
-            body: boqTable,
-            startY: y,
-            theme: "grid",
-            styles: {
-                fontSize: 8,
-                cellPadding: 3,
-                valign: "middle",
-                lineColor: [0, 0, 0],
-                lineWidth: 0.1
-            },
-            columnStyles: {
-                0: { halign: "left", cellWidth: 70 },
-                1: { halign: "center", cellWidth: 25 },
-                2: { halign: "center", cellWidth: 20 },
-                3: { halign: "right", cellWidth: 30 },
-                4: { halign: "right", cellWidth: 35 }
-            },
-            headStyles: {
-                fillColor: [220, 220, 220],
-                textColor: 0,
-                fontStyle: "bold",
-                lineWidth: 0.1
-            },
-            alternateRowStyles: {
-                fillColor: [245, 245, 245]
-            },
-            didParseCell: function(data) {
-                const cellValue = (data.cell.raw || "").toString();
+                // Get the actual calculated values from the displayed BOQ table
+                const boqTable = extractBOQDataFromDisplay();
                 
-                // Style section headers
-                if (cellValue === "Materials" || cellValue === "Labor" || cellValue === "Summary") {
-                    data.cell.styles.fillColor = [224, 224, 224];
-                    data.cell.styles.fontStyle = 'bold';
-                    data.cell.styles.halign = 'left';
-                    data.cell.colSpan = 5;
-                }
-                
-                // Style totals and subtotals
-                if (cellValue.includes("Subtotal") || cellValue.includes("Total") || cellValue.includes("TOTAL") || 
-                    cellValue.includes("Overhead") || cellValue.includes("Profit Margin") || 
-                    cellValue.includes("Materials + Labor") || cellValue.includes("Waste")) {
-                    data.cell.styles.fontStyle = 'bold';
-                }
-                
-                // Style the grand total row
-                if (cellValue.includes("TOTAL PROJECT COST")) {
-                    data.cell.styles.fillColor = [200, 200, 200];
-                    data.cell.styles.fontStyle = 'bold';
-                }
-            },
-            didDrawPage: function(data) {
-                doc.setFontSize(8);
-                doc.setTextColor(100);
-                doc.text(`Page ${data.pageNumber}`, 
-                    doc.internal.pageSize.width - 15, 
-                    doc.internal.pageSize.height - 10);
-            },
-            margin: { top: y, left: margin, right: margin }
-        });
+                // Set margins and initial position
+                const margin = 15;
+                let y = margin;
 
-        // Save the PDF
-        doc.save("CHB_Wall_Estimate.pdf");
-    } catch (error) {
-        alert("Error generating PDF: " + error.message);
-        console.error(error);
-    }
-}
+                // Add header information
+                doc.setFontSize(18);
+                doc.setFont("helvetica", "bold");
+                doc.text("CHB Wall Estimation Report", margin, y);
+                y += 10;
 
-// Extract data directly from the displayed BOQ table with CORRECTED spelling
-function extractBOQDataFromDisplay() {
-    const table = document.getElementById('boqTable');
-    if (!table) {
-        return getFallbackData();
-    }
-    
-    const rows = table.querySelectorAll('tr');
-    const data = [];
-    
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td, th');
-        const rowData = ['', '', '', '', '']; // Initialize with 5 empty columns
-        
-        cells.forEach((cell, index) => {
-            if (index < 5) {
-                let text = cell.textContent.trim();
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Project: ${projectName}`, margin, y);
+                doc.text(`Client: ${clientName}`, 100, y);
+                y += 5;
+                doc.text(`Location: ${projectLocation}`, margin, y);
+                doc.text(`Date: ${date}`, 100, y);
+                y += 5;
+                doc.text(`Prepared by: ${preparedBy}`, margin, y);
+                y += 10;
+
+                // Add wall dimensions summary
+                const wallLength = document.getElementById('wallLength').value || '10';
+                const wallHeight = document.getElementById('wallHeight').value || '3';
+                const netWallArea = document.querySelector('#results p strong')?.textContent?.match(/\d+\.\d+/)?.[0] || '0';
                 
-                // Remove currency symbols but keep numbers and text
-                text = text.replace(/[₱P,]/g, '').trim();
+                doc.setFontSize(11);
+                doc.text(`Wall Dimensions: ${wallLength}m × ${wallHeight}m`, margin, y);
+                y += 5;
+                doc.text(`Net Wall Area: ${netWallArea} m²`, margin, y);
+                y += 10;
                 
-                // FIX SPELLING ERRORS
-                if (text.includes('rofit') || text.includes('Rollt') || text.includes('rollt')) {
-                    text = 'Profit Margin';
-                }
-                if (text.includes('ROJECT') || text.includes('ROUECT') || text.includes('ROECT')) {
-                    text = 'TOTAL PROJECT COST';
-                }
-                if (text === 'TOTAL ROJECT COST') {
-                    text = 'TOTAL PROJECT COST';
-                }
-                if (text === 'rofit Margin') {
-                    text = 'Profit Margin';
-                }
-                
-                rowData[index] = text;
+                // Add Bill of Quantities title
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "bold");
+                doc.text("Bill of Quantities", margin, y);
+                y += 8;
+
+                // Configure and draw the table
+                doc.autoTable({
+                    head: [["Description", "Quantity", "Unit", "Unit Rate", "Amount"]],
+                    body: boqTable,
+                    startY: y,
+                    theme: "grid",
+                    styles: {
+                        fontSize: 8,
+                        cellPadding: 3,
+                        valign: "middle",
+                        lineColor: [0, 0, 0],
+                        lineWidth: 0.1
+                    },
+                    columnStyles: {
+                        0: { halign: "left", cellWidth: 70 },
+                        1: { halign: "center", cellWidth: 25 },
+                        2: { halign: "center", cellWidth: 20 },
+                        3: { halign: "right", cellWidth: 30 },
+                        4: { halign: "right", cellWidth: 35 }
+                    },
+                    headStyles: {
+                        fillColor: [220, 220, 220],
+                        textColor: 0,
+                        fontStyle: "bold",
+                        lineWidth: 0.1
+                    },
+                    alternateRowStyles: {
+                        fillColor: [245, 245, 245]
+                    },
+                    didParseCell: function(data) {
+                        const cellValue = (data.cell.raw || "").toString();
+                        
+                        // Style section headers
+                        if (cellValue === "Materials" || cellValue === "Labor" || cellValue === "Summary") {
+                            data.cell.styles.fillColor = [224, 224, 224];
+                            data.cell.styles.fontStyle = 'bold';
+                            data.cell.styles.halign = 'left';
+                            data.cell.colSpan = 5;
+                        }
+                        
+                        // Style totals and subtotals
+                        if (cellValue.includes("Subtotal") || cellValue.includes("Total") || cellValue.includes("TOTAL") || 
+                            cellValue.includes("Overhead") || cellValue.includes("Profit Margin") || 
+                            cellValue.includes("Materials + Labor") || cellValue.includes("Waste")) {
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                        
+                        // Style the grand total row
+                        if (cellValue.includes("TOTAL PROJECT COST")) {
+                            data.cell.styles.fillColor = [200, 200, 200];
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    },
+                    didDrawPage: function(data) {
+                        doc.setFontSize(8);
+                        doc.setTextColor(100);
+                        doc.text(`Page ${data.pageNumber}`, 
+                            doc.internal.pageSize.width - 15, 
+                            doc.internal.pageSize.height - 10);
+                    },
+                    margin: { top: y, left: margin, right: margin }
+                });
+
+                // Save the PDF
+                doc.save("CHB_Wall_Estimate.pdf");
+            } catch (error) {
+                alert("Error generating PDF: " + error.message);
+                console.error(error);
             }
-        });
-        
-        // Fix the structure for summary rows - ensure amounts are only in column 4
-        if (rowData[0].includes("Materials Subtotal") || 
-            rowData[0].includes("Waste") || 
-            rowData[0].includes("Materials Total") || 
-            rowData[0].includes("Labor Total") || 
-            rowData[0].includes("Materials + Labor") || 
-            rowData[0].includes("Overhead") || 
-            rowData[0].includes("Profit Margin") || 
-            rowData[0].includes("TOTAL PROJECT COST")) {
-            
-            // If amount is wrongly placed in quantity column (column 1), move it to amount column (column 4)
-            if (rowData[1] && rowData[1].match(/[\d.,]/) && !rowData[4]) {
-                rowData[4] = rowData[1]; // Move amount from column 1 to column 4
-                rowData[1] = ''; // Clear column 1
-            }
-            
-            // If amount is wrongly placed in unit rate column (column 3), move it to amount column (column 4)
-            if (rowData[3] && rowData[3].match(/[\d.,]/) && !rowData[4]) {
-                rowData[4] = rowData[3]; // Move amount from column 3 to column 4
-                rowData[3] = ''; // Clear column 3
-            }
-            
-            // Ensure columns 1, 2, 3 are empty for summary rows
-            rowData[1] = ''; // Quantity column
-            rowData[2] = ''; // Unit column  
-            rowData[3] = ''; // Unit Rate column
         }
-        
-        if (!rowData.every(cell => cell === '')) {
-            data.push(rowData);
+
+        // Extract data directly from the displayed BOQ table with CORRECTED spelling
+        function extractBOQDataFromDisplay() {
+            const table = document.getElementById('boqTable');
+            if (!table) {
+                return getFallbackData();
+            }
+            
+            const rows = table.querySelectorAll('tr');
+            const data = [];
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td, th');
+                const rowData = ['', '', '', '', '']; // Initialize with 5 empty columns
+                
+                cells.forEach((cell, index) => {
+                    if (index < 5) {
+                        let text = cell.textContent.trim();
+                        
+                        // Remove currency symbols but keep numbers and text
+                        text = text.replace(/[₱P,]/g, '').trim();
+                        
+                        // FIX SPELLING ERRORS
+                        if (text.includes('rofit') || text.includes('Rollt') || text.includes('rollt')) {
+                            text = 'Profit Margin';
+                        }
+                        if (text.includes('ROJECT') || text.includes('ROUECT') || text.includes('ROECT')) {
+                            text = 'TOTAL PROJECT COST';
+                        }
+                        if (text === 'TOTAL ROJECT COST') {
+                            text = 'TOTAL PROJECT COST';
+                        }
+                        if (text === 'rofit Margin') {
+                            text = 'Profit Margin';
+                        }
+                        
+                        rowData[index] = text;
+                    }
+                });
+                
+                // Fix the structure for summary rows - ensure amounts are only in column 4
+                if (rowData[0].includes("Materials Subtotal") || 
+                    rowData[0].includes("Waste") || 
+                    rowData[0].includes("Materials Total") || 
+                    rowData[0].includes("Labor Total") || 
+                    rowData[0].includes("Materials + Labor") || 
+                    rowData[0].includes("Overhead") || 
+                    rowData[0].includes("Profit Margin") || 
+                    rowData[0].includes("TOTAL PROJECT COST")) {
+                    
+                    // If amount is wrongly placed in quantity column (column 1), move it to amount column (column 4)
+                    if (rowData[1] && rowData[1].match(/[\d.,]/) && !rowData[4]) {
+                        rowData[4] = rowData[1]; // Move amount from column 1 to column 4
+                        rowData[1] = ''; // Clear column 1
+                    }
+                    
+                    // If amount is wrongly placed in unit rate column (column 3), move it to amount column (column 4)
+                    if (rowData[3] && rowData[3].match(/[\d.,]/) && !rowData[4]) {
+                        rowData[4] = rowData[3]; // Move amount from column 3 to column 4
+                        rowData[3] = ''; // Clear column 3
+                    }
+                    
+                    // Ensure columns 1, 2, 3 are empty for summary rows
+                    rowData[1] = ''; // Quantity column
+                    rowData[2] = ''; // Unit column  
+                    rowData[3] = ''; // Unit Rate column
+                }
+                
+                if (!rowData.every(cell => cell === '')) {
+                    data.push(rowData);
+                }
+            });
+            
+            return data.length > 0 ? data : getFallbackData();
         }
-    });
-    
-    return data.length > 0 ? data : getFallbackData();
-}
 
-// Fallback data with CORRECTED spelling and structure
-function getFallbackData() {
-    return [
-        ["Materials", "", "", "", ""],
-        ["CHB Blocks", "316", "pcs", "25.00", "7900.00"],
-        ["Cement", "6", "bags", "250.00", "1500.00"],
-        ["Sand", "1.51", "m³", "800.00", "1211.04"],
-        ["Rebar (12mm)", "99", "kg", "45.00", "4455.00"],
-        ["Materials Subtotal", "", "", "", "15066.04"],
-        ["Waste (5%)", "", "", "", "753.30"],
-        ["Materials Total", "", "", "", "15819.34"],
-        ["Labor", "", "", "", ""],
-        ["Mason", "2", "days", "600.00", "4698.28"],
-        ["Helper", "2", "days", "400.00", "3108.18"],
-        ["Carpenter", "1", "days", "500.00", "1841.37"],
-        ["Labor Total", "", "", "", "9706.83"],
-        ["Summary", "", "", "", ""],
-        ["Materials + Labor", "", "", "", "25526.17"],
-        ["Overhead", "", "", "", "3828.93"],
-        ["Profit Margin", "", "", "", "2935.51"], // CORRECTED SPELLING
-        ["TOTAL PROJECT COST", "", "", "", "32290.61"] // CORRECTED SPELLING
-    ];
-}
-
-// Optional: Helper function to extract BOQ data from HTML table (if you have one)
-function getBOQTableData() {
-    // If you have an HTML table with id="boqTable", you can use this function
-    // For now, we'll just use the default data
-    return getDefaultBOQData();
-}
+        // Fallback data with CORRECTED spelling and structure
+        function getFallbackData() {
+            return [
+                ["Materials", "", "", "", ""],
+                ["CHB Blocks", "316", "pcs", "25.00", "7900.00"],
+                ["Cement", "6", "bags", "250.00", "1500.00"],
+                ["Sand", "1.51", "m³", "800.00", "1211.04"],
+                ["Rebar (12mm)", "99", "kg", "45.00", "4455.00"],
+                ["Materials Subtotal", "", "", "", "15066.04"],
+                ["Waste (5%)", "", "", "", "753.30"],
+                ["Materials Total", "", "", "", "15819.34"],
+                ["Labor", "", "", "", ""],
+                ["Mason", "2", "days", "600.00", "4698.28"],
+                ["Helper", "2", "days", "400.00", "3108.18"],
+                ["Carpenter", "1", "days", "500.00", "1841.37"],
+                ["Labor Total", "", "", "", "9706.83"],
+                ["Summary", "", "", "", ""],
+                ["Materials + Labor", "", "", "", "25526.17"],
+                ["Overhead", "", "", "", "3828.93"],
+                ["Profit Margin", "", "", "", "2935.51"], // CORRECTED SPELLING
+                ["TOTAL PROJECT COST", "", "", "", "32290.61"] // CORRECTED SPELLING
+            ];
+        }
         
         function exportExcel() {
             // Create a new workbook
